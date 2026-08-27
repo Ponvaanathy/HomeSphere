@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Property Details & Decision Intelligence | HomeSphere</title>
+  <meta name="description" content="Explore verified property specifications, Trust Score breakdown, Locality LifeScore, and first-year cost evaluation.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/properties.css">
+  <style>
+    .details-hero-layout {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 2rem;
+      margin-bottom: 2.5rem;
+    }
+    .gallery-main-img {
+      width: 100%;
+      height: 440px;
+      object-fit: cover;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+    }
+    .gallery-thumbs-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 0.75rem;
+      overflow-x: auto;
+    }
+    .gallery-thumb-item {
+      width: 80px;
+      height: 60px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all var(--transition-fast);
+    }
+    .gallery-thumb-item.active {
+      border-color: var(--brand-primary);
+    }
+    .details-contact-sidebar {
+      background-color: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.75rem;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: calc(var(--header-height) + 1.5rem);
+      height: fit-content;
+    }
+    .trust-breakdown-table, .costs-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+    }
+    .trust-breakdown-table td, .costs-table td {
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--border-color);
+      font-size: 0.875rem;
+    }
+    .costs-table .total-row td {
+      font-weight: 800;
+      font-size: 1.05rem;
+      color: var(--brand-primary);
+      border-bottom: none;
+      padding-top: 1rem;
+    }
+    .chat-bubble {
+      max-width: 80%;
+      padding: 0.65rem 0.9rem;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      line-height: 1.4;
+      position: relative;
+    }
+    .chat-bubble.user {
+      align-self: flex-end;
+      background-color: var(--brand-primary);
+      color: #ffffff;
+      border-bottom-right-radius: 2px;
+    }
+    .chat-bubble.owner {
+      align-self: flex-start;
+      background-color: #ffffff;
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+      border-bottom-left-radius: 2px;
+    }
+    .chat-time {
+      font-size: 0.65rem;
+      opacity: 0.75;
+      margin-top: 0.25rem;
+      display: block;
+      text-align: right;
+    }
+    @media (max-width: 960px) {
+      .details-hero-layout {
+        grid-template-columns: 1fr;
+      }
+      .gallery-main-img {
+        height: 300px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/saved.html" class="btn btn-secondary btn-sm"><i class="far fa-heart"></i> Saved</a>
+        <a href="/dashboard.html" class="btn btn-primary btn-sm">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Details Page -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Breadcrumbs -->
+      <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        <a href="/index.html" class="text-brand">Home</a> &nbsp;/&nbsp; 
+        <a href="/properties.html" class="text-brand">Properties</a> &nbsp;/&nbsp; 
+        <span id="breadcrumbCategory">Residential</span> &nbsp;/&nbsp; 
+        <span id="breadcrumbTitle" class="text-primary" style="font-weight: 600;">Property Details</span>
+      </div>
+
+      <!-- Hero Header: Title, Location, Badges -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem;">
+            <span class="badge badge-sale" id="detailsTypeBadge">FOR SALE</span>
+            <span class="badge badge-verified" id="detailsVerifiedBadge"><i class="fas fa-check-circle"></i> Verified ✓</span>
+            <span class="score-pill trust" id="detailsTrustPill"><i class="fas fa-shield-check"></i> Trust Score: 91/100</span>
+          </div>
+          <h1 style="font-size: 2.25rem; color: var(--text-primary); margin-bottom: 0.35rem;" id="detailsTitle">Loading Property...</h1>
+          <p class="text-secondary" style="font-size: 1rem;"><i class="fas fa-map-marker-alt text-brand"></i> <span id="detailsLocation">—</span></p>
+        </div>
+
+        <div style="text-align: right;">
+          <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Estimated Price</div>
+          <div style="font-size: 2.25rem; font-weight: 800; color: var(--text-primary); font-family: var(--font-heading);" id="detailsPrice">₹—</div>
+          <div class="text-muted" style="font-size: 0.8125rem;" id="detailsPriceSqft">—</div>
+        </div>
+      </div>
+
+      <!-- Main Layout: 2 Columns -->
+      <div class="details-hero-layout">
+
+        <!-- Left Column: Gallery & In-Depth Modules -->
+        <div style="display: flex; flex-direction: column; gap: 2rem;">
+
+          <!-- Image Gallery (Section 21) -->
+          <div>
+            <img src="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80" class="gallery-main-img" id="galleryMainImg" alt="Property View">
+            <div class="gallery-thumbs-row" id="galleryThumbs"></div>
+          </div>
+
+          <!-- Key Specifications Ribbon -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1rem; background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; box-shadow: var(--shadow-xs);">
+            <div>
+              <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Bedrooms</span>
+              <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 0.2rem;" id="specBeds">—</div>
+            </div>
+            <div>
+              <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Bathrooms</span>
+              <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 0.2rem;" id="specBaths">—</div>
+            </div>
+            <div>
+              <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Super Built-up Area</span>
+              <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 0.2rem;" id="specArea">—</div>
+            </div>
+            <div>
+              <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Furnishing</span>
+              <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 0.2rem; text-transform: capitalize;" id="specFurnishing">—</div>
+            </div>
+            <div>
+              <span class="text-muted" style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700;">Parking</span>
+              <div style="font-size: 1.15rem; font-weight: 700; color: var(--text-primary); margin-top: 0.2rem;" id="specParking">—</div>
+            </div>
+          </div>
+
+          <!-- Detailed Description -->
+          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+            <div class="section-eyebrow"><i class="fas fa-align-left text-brand"></i> Property Overview</div>
+            <h3 style="font-size: 1.25rem; color: var(--text-primary); margin-bottom: 0.75rem; margin-top: 0.25rem;">About This Property</h3>
+            <p style="font-size: 0.9375rem; color: var(--text-secondary); line-height: 1.7;" id="detailsDescription">
+              No description provided for this listing.
+            </p>
+          </div>
+
+          <!-- 🧬 Property DNA Section -->
+          <div class="card property-dna-card" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <div class="section-eyebrow"><i class="fas fa-dna text-purple"></i> Architectural & Legal Blueprint</div>
+                <h3 style="font-size: 1.25rem; color: var(--text-primary); margin-top: 0.25rem;">🧬 PROPERTY DNA</h3>
+              </div>
+              <span class="score-pill trust" id="dnaStatusPill"><i class="fas fa-certificate"></i> Verified DNA Profile</span>
+            </div>
+            <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: 1.25rem;">
+              Understand the unique characteristics of this property.
+            </p>
+
+            <div class="dna-attributes-grid" id="dnaAttributesGrid">
+              <!-- Dynamically populated attribute cards -->
+            </div>
+          </div>
+
+          <!-- 🌿 Green Living Score Section -->
+          <div class="card green-living-card" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <div class="section-eyebrow"><i class="fas fa-leaf text-emerald"></i> Environmental Sustainability</div>
+                <h3 style="font-size: 1.25rem; color: var(--text-primary); margin-top: 0.25rem;">🌿 GREEN LIVING SCORE</h3>
+              </div>
+              <span class="score-pill green" id="greenRatingBadge">Eco Living</span>
+            </div>
+            <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: 1.25rem;">
+              Evaluate the property's environmental and sustainable living potential.
+            </p>
+
+            <div id="greenLivingContainer">
+              <!-- Dynamically populated score gauge & environmental factors -->
+            </div>
+          </div>
+
+          <!-- AI Decision Summary (Section 26) -->
+          <div class="ai-insight-box">
+            <div class="title"><i class="fas fa-sparkles"></i> HomeSphere AI Property Decision Insight</div>
+            <p class="body-text" id="detailsAiInsight">
+              Evaluating municipal verification records and localized live market trends...
+            </p>
+          </div>
+
+          <!-- Property Trust Score Breakdown (Section 22) -->
+          <div class="trust-score-card">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+              <div>
+                <div class="section-eyebrow"><i class="fas fa-shield-check text-emerald"></i> Verification & Transparency</div>
+                <h3 style="font-size: 1.25rem; color: var(--text-primary);">Property Trust Score: <span id="detailsTrustVal">— / 100</span></h3>
+              </div>
+              <span class="badge badge-verified" style="font-size: 0.75rem;">Grade A+ Verified</span>
+            </div>
+            <p class="text-secondary" style="font-size: 0.875rem;">
+              HomeSphere verified this listing against 5 multi-point authentic compliance checks.
+            </p>
+
+            <table class="trust-breakdown-table">
+              <tbody>
+                <tr>
+                  <td><strong>1. Owner & Registry Check</strong></td>
+                  <td style="text-align: right;"><span class="text-emerald font-bold">100% Verified</span></td>
+                </tr>
+                <tr>
+                  <td><strong>2. Location & GPS Authenticity</strong></td>
+                  <td style="text-align: right;"><span class="text-emerald font-bold">96% Match</span></td>
+                </tr>
+                <tr>
+                  <td><strong>3. Image Authenticity & Duplicate Check</strong></td>
+                  <td style="text-align: right;"><span class="text-emerald font-bold">92% Unique</span></td>
+                </tr>
+                <tr>
+                  <td><strong>4. Market Price Sanity vs Benchmark</strong></td>
+                  <td style="text-align: right;"><span class="text-emerald font-bold">90% Fair Value</span></td>
+                </tr>
+                <tr>
+                  <td><strong>5. Listing Freshness & Audit</strong></td>
+                  <td style="text-align: right;"><span class="text-emerald font-bold">95% Active</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 💰 Hidden Cost Engine (Section 24) -->
+          <div class="card costs-card" id="hiddenCostSection" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <div class="section-eyebrow"><i class="fas fa-calculator text-amber"></i> Financial Clarity</div>
+                <h3 style="font-size: 1.25rem; color: var(--text-primary); margin-top: 0.25rem;">💰 HIDDEN COST ENGINE</h3>
+              </div>
+              <span class="score-pill trust" style="background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;">
+                <i class="fas fa-info-circle"></i> Estimated Calculation
+              </span>
+            </div>
+            <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: 1.25rem;">
+              Stamp duty, registration, annual maintenance & fit-out outlay calculated for this property.
+            </p>
+
+            <div id="hiddenCostContainer">
+              <table class="costs-table">
+                <tbody>
+                  <tr>
+                    <td><strong>Property Price</strong> <span class="text-muted" style="font-size: 0.78rem;">(Base Listing Price)</span></td>
+                    <td style="text-align: right; font-weight: 700;" id="costBasePrice">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Stamp Duty</strong> <span class="badge" style="font-size: 0.65rem; background: #f1f5f9; color: #475569;" id="costStampBadge">Estimated ~7%</span></td>
+                    <td style="text-align: right;" id="costRegistration">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Registration Fee</strong> <span class="badge" style="font-size: 0.65rem; background: #f1f5f9; color: #475569;">Estimated 1%</span></td>
+                    <td style="text-align: right;" id="costGovtFee">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Annual Society Maintenance</strong> <span class="text-muted" style="font-size: 0.78rem;" id="costMaintSub">(Scaled to area)</span></td>
+                    <td style="text-align: right;" id="costMaintenance">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Fit-out / Interior Estimate</strong> <span class="text-muted" style="font-size: 0.78rem;" id="costFitoutSub">(Based on furnishing)</span></td>
+                    <td style="text-align: right;" id="costReno">—</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Other Estimated Costs</strong> <span class="text-muted" style="font-size: 0.78rem;">(Property tax & legal buffer)</span></td>
+                    <td style="text-align: right;" id="costOther">—</td>
+                  </tr>
+                  <tr class="total-row" style="background: #f8fafc; font-size: 1.05rem;">
+                    <td><strong style="color: var(--brand-primary);">Total Estimated First-Year Outlay</strong></td>
+                    <td style="text-align: right; font-weight: 800; color: var(--brand-primary);" id="costTotal">—</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <!-- "How is this calculated?" Accordion -->
+              <details style="margin-top: 1.25rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem 1rem; font-size: 0.8125rem; color: var(--text-secondary);">
+                <summary style="font-weight: 700; color: var(--brand-primary); cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fas fa-question-circle"></i> How is this calculated?
+                </summary>
+                <div style="margin-top: 0.65rem; line-height: 1.6;" id="costAssumptionsText">
+                  Calculations use statutory state benchmarks: Stamp duty is estimated at ~7% for sales / ~1% for leases; registration is estimated at 1%; annual maintenance is calibrated by built-up area; and fit-out allowances reflect furnishing status. These values represent realistic budgeting estimates and are not official government tax assessments.
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <!-- 📍 Locality LifeScore Radar (Section 25) -->
+          <div class="card locality-score-card" id="localitySection" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+            <div class="locality-header-row" style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <div class="section-eyebrow"><i class="fas fa-map-marked-alt text-brand"></i> Neighborhood Intelligence</div>
+                <h3 class="locality-section-title" style="font-size: 1.25rem; color: var(--text-primary); margin-top: 0.25rem;">📍 LOCALITY LIFESCORE RADAR</h3>
+              </div>
+              <span class="score-pill life" id="detailsLocalityLabel">Live Micro-Market</span>
+            </div>
+            <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: 1.5rem;">
+              Safety, hospital, school & transit density evaluated across 6 core urban parameters (0–10 scale).
+            </p>
+
+            <div id="localityScoreMainContainer">
+              <!-- Radar Chart + Breakdown Grid rendered dynamically -->
+            </div>
+          </div>
+
+          <!-- 📈 5-Year Capital Forecast & Resale Velocity -->
+          <div class="card capital-forecast-card" id="forecastSection" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.5rem;">
+              <div>
+                <div class="section-eyebrow"><i class="fas fa-chart-line text-emerald"></i> Appreciation & Liquidity</div>
+                <h3 style="font-size: 1.25rem; color: var(--text-primary); margin-top: 0.25rem;">📈 5-YEAR CAPITAL FORECAST</h3>
+              </div>
+              <div style="display: flex; gap: 0.5rem; align-items: center;">
+                <span class="score-pill green" id="forecastCagrBadge"><i class="fas fa-arrow-trend-up"></i> ~7.2% CAGR</span>
+                <span class="score-pill trust" id="forecastVelocityBadge"><i class="fas fa-bolt"></i> FAST Resale</span>
+              </div>
+            </div>
+            <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: 1.25rem;">
+              Estimated CAGR compounding trajectory & secondary market resale velocity for this property.
+            </p>
+
+            <div id="capitalForecastContainer">
+              <!-- Dynamically populated forecast metrics, trajectory canvas chart & compounding table -->
+            </div>
+          </div>
+
+          <!-- Interactive Map (Section 23) -->
+          <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
+            <div class="section-eyebrow"><i class="fas fa-map-marker-alt text-brand"></i> Geo-Coordinates</div>
+            <h3 style="font-size: 1.25rem; color: var(--text-primary); margin-bottom: 0.75rem;">Location & GPS Intelligence</h3>
+            <div id="detailsMapContainer" style="width: 100%; height: 320px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); z-index: 1;"></div>
+          </div>
+
+
+        </div>
+
+        <!-- Right Sticky Action Sidebar -->
+        <aside class="details-contact-sidebar">
+          <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">Offered at</div>
+          <div style="font-size: 2rem; font-weight: 800; color: var(--text-primary); margin-bottom: 1.25rem; font-family: var(--font-heading);" id="sidebarPrice">
+            —
+          </div>
+
+          <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.75rem;">
+            <!-- Primary Action: Dynamic for Buy / Rent / Lease -->
+            <button type="button" onclick="handleInterestAction()" class="btn btn-primary btn-lg" id="btnPrimaryInterest" style="width: 100%; font-weight: 700;">
+              <i class="fas fa-home"></i> <span id="btnPrimaryInterestText">I'm Interested in Buying</span>
+            </button>
+
+            <button type="button" onclick="openInAppChat()" class="btn btn-secondary" style="width: 100%;">
+              <i class="fas fa-comment-dots"></i> Chat with Owner
+            </button>
+            <button type="button" onclick="handleSaveAction()" class="btn btn-secondary" id="btnSaveDetail" style="width: 100%;">
+              <i class="far fa-heart"></i> Save Property
+            </button>
+            <button type="button" onclick="handleCompareAction()" class="btn btn-secondary" style="width: 100%;">
+              <i class="fas fa-balance-scale"></i> Add to Compare
+            </button>
+            <a href="/advisor.html" class="btn btn-secondary" style="width: 100%; color: var(--accent-purple);">
+              <i class="fas fa-robot text-purple"></i> Ask AI Advisor
+            </a>
+          </div>
+
+          <!-- LISTING OWNER (IN-APP CHAT ONLY) -->
+          <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+            <div style="font-size: 0.8125rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.75rem; text-transform: uppercase;">
+              LISTING OWNER
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+              <div style="width: 44px; height: 44px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem;" id="ownerAvatarInitial">O</div>
+              <div>
+                <strong style="color: var(--text-primary); font-size: 0.95rem;" id="ownerName">Owner Information</strong>
+                <div class="text-emerald" style="font-size: 0.75rem; font-weight: 700;" id="ownerVerifiedBadge">✓ Verified Owner</div>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Modal: In-App Chat with Owner -->
+  <div id="inAppChatModal" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="max-width: 580px; height: 600px; display: flex; flex-direction: column; padding: 0; overflow: hidden; border-radius: var(--radius-lg); box-shadow: var(--shadow-xl);">
+      <!-- Chat Header -->
+      <div style="padding: 1rem 1.25rem; background: #ffffff; border-bottom: 1px solid var(--border-color); display: flex; align-items: center; justify-content: space-between;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 42px; height: 42px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 1.1rem;" id="modalOwnerInit">O</div>
+          <div>
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+              <strong style="font-size: 0.95rem; color: var(--text-primary);" id="modalOwnerName">Owner</strong>
+              <span class="badge badge-trust" style="font-size: 0.65rem;" id="modalOwnerBadge">Verified Owner</span>
+            </div>
+            <div class="text-muted" style="font-size: 0.75rem;" id="modalPropSubtitle">In-App Property Communications</div>
+          </div>
+        </div>
+        <button class="modal-close" onclick="closeInAppChat()" style="font-size: 1.5rem; background: none; border: none; cursor: pointer; color: var(--text-muted);">&times;</button>
+      </div>
+
+      <!-- Property Context Banner -->
+      <div style="padding: 0.6rem 1.25rem; background: var(--bg-surface-alt); border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; font-size: 0.8125rem;">
+        <span style="font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px;" id="modalPropTitle">Property</span>
+        <span style="font-weight: 800; color: var(--brand-primary);" id="modalPropPrice">₹0</span>
+      </div>
+
+      <!-- Interest Context Notice (Visible when opened from 'Interested in Buying/Renting/Leasing') -->
+      <div id="modalInterestNotice" style="display: none; padding: 0.65rem 1.25rem; background: #ecfdf5; border-bottom: 1px solid #a7f3d0; font-size: 0.8125rem; color: #065f46;">
+        <i class="fas fa-info-circle text-emerald"></i> <span id="modalInterestText">You're interested in this property. Review your message below to start the conversation with the owner.</span>
+      </div>
+
+      <!-- Messages Stream -->
+      <div id="modalChatStream" style="flex: 1; padding: 1rem 1.25rem; overflow-y: auto; display: flex; flex-direction: column; gap: 0.75rem; background: #f8fafc;">
+        <div style="text-align: center; color: var(--text-muted); font-size: 0.8125rem; margin: auto;">
+          <i class="fas fa-lock" style="color: var(--accent-emerald);"></i> End-to-end authenticated in-app messaging.<br>Start the conversation with the owner below.
+        </div>
+      </div>
+
+      <!-- Chat Input Footer -->
+      <form id="modalChatForm" onsubmit="handleSendInAppMessage(event)" style="padding: 0.75rem 1.25rem; background: #ffffff; border-top: 1px solid var(--border-color); display: flex; gap: 0.5rem; align-items: center;">
+        <input type="text" id="modalChatInput" class="form-input" placeholder="Type a message regarding this property..." required style="flex: 1; margin-bottom: 0;">
+        <button type="submit" class="btn btn-primary" id="btnModalSend" style="padding: 0.6rem 1.2rem;">
+          <i class="fas fa-paper-plane"></i>
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/property-details.js"></script>
+</body>
+</html>

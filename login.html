@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign In | HomeSphere Real Estate</title>
+  <meta name="description" content="Sign in to your HomeSphere account to access your property dashboard, saved shortlists, and decision insights.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/login.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+      <div class="nav-actions">
+        <a href="/register.html" class="btn btn-secondary btn-sm">Create Account</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Sign In Form -->
+  <main class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2>Sign In to HomeSphere</h2>
+        <p>Access your property dashboard, shortlists & AI Advisor</p>
+      </div>
+
+      <!-- Continue with Google Placeholder -->
+      <button type="button" class="btn-google" onclick="showToast('Google Sign-In ready in demo mode.', 'info');">
+        <i class="fab fa-google" style="color: #ea4335;"></i> Continue with Google
+      </button>
+
+      <div class="auth-divider">or sign in with email</div>
+
+      <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" class="form-input" placeholder="name@example.com" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.4rem;">
+            <label class="form-label" for="loginPassword" style="margin-bottom: 0;">Password</label>
+            <a href="#" onclick="showToast('Password reset instructions will be sent to your email.', 'info'); return false;" class="text-brand" style="font-size: 0.8125rem;">Forgot password?</a>
+          </div>
+          <div style="position: relative;">
+            <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+            <button type="button" onclick="togglePassVisibility('loginPassword', this)" style="position: absolute; right: 0.75rem; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--text-muted); cursor: pointer;">
+              <i class="far fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; font-size: 0.875rem;">
+          <label style="display: flex; align-items: center; gap: 0.4rem; cursor: pointer; color: var(--text-secondary);">
+            <input type="checkbox" id="rememberMe" checked style="width: auto !important; accent-color: var(--brand-primary);">
+            <span>Remember me</span>
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="loginSubmitBtn" style="width: 100%; height: 44px;">
+          Sign In
+        </button>
+      </form>
+
+      <div class="auth-footer">
+        Don't have an account? <a href="/register.html">Create one</a>
+      </div>
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/login.js"></script>
+</body>
+</html>

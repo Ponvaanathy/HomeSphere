@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HomeSphere — AI-Powered Real Estate Marketplace & Decision Platform</title>
+  <meta name="description" content="Discover, verify, evaluate, compare, and decide on properties for sale, rent, and lease with AI Trust Scoring, Hidden Cost Breakdown, and Locality LifeScore.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/properties.css">
+  <style>
+    .hero-search-wrapper {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      box-shadow: var(--shadow-lg);
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .hero-purpose-tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.75rem;
+    }
+    .purpose-tab-btn {
+      padding: 0.5rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      border-radius: var(--radius-full);
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .purpose-tab-btn.active {
+      background-color: var(--brand-primary);
+      color: #ffffff;
+      border-color: var(--brand-primary);
+    }
+    .hero-inputs-grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1.2fr 1fr auto;
+      gap: 1rem;
+      align-items: flex-end;
+    }
+    .cat-marketplace-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1.5rem;
+      margin-top: 2rem;
+    }
+    .cat-card-item {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.75rem 1.5rem;
+      box-shadow: var(--shadow-sm);
+      transition: all var(--transition-fast);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .cat-card-item:hover {
+      border-color: var(--brand-primary);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .cat-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-sm);
+      background-color: var(--brand-primary-light);
+      color: var(--brand-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      margin-bottom: 1rem;
+    }
+    .pillar-card {
+      background-color: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 2rem;
+      box-shadow: var(--shadow-sm);
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sticky Navbar -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link active">Home</a>
+        <a href="/properties.html" class="nav-link">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/login.html" class="btn btn-secondary btn-sm">Sign In</a>
+        <a href="/register.html" class="btn btn-primary btn-sm">Get Started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <main class="main-content" style="padding-top: 5rem;">
+    <section class="container" style="text-align: center; margin-bottom: 4.5rem;">
+      <div class="section-eyebrow">
+        <i class="fas fa-shield-check text-emerald"></i> Trust + Real Estate + AI + Decision Intelligence
+      </div>
+      <h1 style="max-width: 860px; margin: 0.5rem auto 1rem; font-size: 3rem; line-height: 1.2;">
+        Find the Right Property. <br><span class="text-brand">Make the Right Decision.</span>
+      </h1>
+      <p style="font-size: 1.15rem; color: var(--text-secondary); max-width: 720px; margin: 0 auto 2.5rem;">
+        Discover, verify, compare and understand properties for sale, rent and lease before you decide with intelligent Trust Scores, true ownership outlays, and locality analytics.
+      </p>
+
+      <!-- Main Property Search Box Inside Hero -->
+      <div class="hero-search-wrapper">
+        <form id="heroSearchForm" onsubmit="handleHeroSearch(event)">
+          <!-- Transaction Tabs: Sale, Rent, Lease -->
+          <div class="hero-purpose-tabs">
+            <button type="button" class="purpose-tab-btn active" onclick="setHeroPurpose('sale', this)">🟢 For Sale</button>
+            <button type="button" class="purpose-tab-btn" onclick="setHeroPurpose('rent', this)">🔵 For Rent</button>
+            <button type="button" class="purpose-tab-btn" onclick="setHeroPurpose('lease', this)">🟠 For Lease</button>
+          </div>
+
+          <div class="hero-inputs-grid">
+            <div class="form-group" style="margin-bottom: 0; text-align: left;">
+              <label class="form-label" for="heroLocation"><i class="fas fa-map-marker-alt text-brand"></i> Location</label>
+              <input type="text" id="heroLocation" class="form-input" placeholder="City or Locality (e.g. Coimbatore)">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0; text-align: left;">
+              <label class="form-label" for="heroCategory"><i class="fas fa-th-large text-brand"></i> Category</label>
+              <select id="heroCategory" class="form-select">
+                <option value="residential" selected>🏠 Residential</option>
+                <option value="land_plots">🌳 Land & Plots</option>
+                <option value="commercial">🏢 Commercial</option>
+                <option value="pg_rooms">🛏️ PG & Rooms</option>
+                <option value="new_projects">🏗️ New Projects</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0; text-align: left;">
+              <label class="form-label" for="heroBudget"><i class="fas fa-rupee-sign text-brand"></i> Budget</label>
+              <select id="heroBudget" class="form-select">
+                <option value="all" selected>Any Budget</option>
+                <option value="under_25k">Under ₹25,000/mo</option>
+                <option value="under_50l">Under ₹50 Lakhs</option>
+                <option value="50l_1cr">₹50 Lakhs - ₹1 Cr</option>
+                <option value="above_1cr">₹1 Cr & Above</option>
+              </select>
+            </div>
+
+            <div>
+              <button type="submit" class="btn btn-primary" style="height: 44px; padding: 0 1.5rem;">
+                <i class="fas fa-search"></i> Search Properties
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div style="margin-top: 1.5rem; display: flex; justify-content: center; gap: 1rem;">
+        <a href="/properties.html" class="btn btn-secondary btn-sm"><i class="fas fa-compass"></i> Explore All Properties</a>
+        <a href="/advisor.html" class="btn btn-secondary btn-sm"><i class="fas fa-robot text-purple"></i> Talk to AI Advisor</a>
+      </div>
+    </section>
+
+    <!-- Category Marketplace Section -->
+    <section class="container" id="categoriesSection" style="margin-bottom: 5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div class="section-eyebrow"><i class="fas fa-layer-group"></i> Marketplace Explorer</div>
+          <h2 style="font-size: 2rem; color: var(--text-primary);">Explore Properties by Category</h2>
+          <p class="text-muted">Structured hierarchy across residential, plots, commercial, and co-living.</p>
+        </div>
+        <a href="/properties.html" class="btn btn-secondary btn-sm">View Full Catalog →</a>
+      </div>
+
+      <div class="cat-marketplace-grid">
+        <!-- 1. Residential -->
+        <a href="/properties.html?category=residential" class="cat-card-item">
+          <div class="cat-icon-wrap"><i class="fas fa-home"></i></div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.35rem;">🏠 Residential</h3>
+          <p class="text-muted" style="font-size: 0.8125rem; margin-bottom: 0.75rem;">
+            House, Flat, Apartment, Villa, Independent House, Builder Floor, Duplex, Bungalow.
+          </p>
+          <div style="margin-top: auto; font-size: 0.75rem; font-weight: 700; color: var(--brand-primary);" id="homeCountRes">
+            Explore Category →
+          </div>
+        </a>
+
+        <!-- 2. Land & Plots -->
+        <a href="/properties.html?category=land_plots" class="cat-card-item">
+          <div class="cat-icon-wrap" style="background-color: var(--accent-emerald-light); color: var(--accent-emerald);"><i class="fas fa-tree"></i></div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.35rem;">🌳 Land / Plots</h3>
+          <p class="text-muted" style="font-size: 0.8125rem; margin-bottom: 0.75rem;">
+            Residential Plot, Agricultural Land, Farm Land, Commercial Plot, Industrial Land.
+          </p>
+          <div style="margin-top: auto; font-size: 0.75rem; font-weight: 700; color: var(--accent-emerald);" id="homeCountLand">
+            Explore Category →
+          </div>
+        </a>
+
+        <!-- 3. Commercial -->
+        <a href="/properties.html?category=commercial" class="cat-card-item">
+          <div class="cat-icon-wrap" style="background-color: var(--accent-cyan-light); color: var(--accent-cyan);"><i class="fas fa-building"></i></div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.35rem;">🏢 Commercial</h3>
+          <p class="text-muted" style="font-size: 0.8125rem; margin-bottom: 0.75rem;">
+            Office, Shop, Showroom, Warehouse, Commercial Building, Co-working Space.
+          </p>
+          <div style="margin-top: auto; font-size: 0.75rem; font-weight: 700; color: var(--accent-cyan);" id="homeCountComm">
+            Explore Category →
+          </div>
+        </a>
+
+        <!-- 4. PG & Rooms -->
+        <a href="/properties.html?category=pg_rooms" class="cat-card-item">
+          <div class="cat-icon-wrap" style="background-color: var(--accent-amber-light); color: var(--accent-amber);"><i class="fas fa-bed"></i></div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.35rem;">🛏️ PG & Rooms</h3>
+          <p class="text-muted" style="font-size: 0.8125rem; margin-bottom: 0.75rem;">
+            PG, Hostel, Single Room, Shared Room, Co-living, Student Accommodation.
+          </p>
+          <div style="margin-top: auto; font-size: 0.75rem; font-weight: 700; color: var(--accent-amber);" id="homeCountPG">
+            Explore Category →
+          </div>
+        </a>
+
+        <!-- 5. New Projects -->
+        <a href="/properties.html?category=new_projects" class="cat-card-item">
+          <div class="cat-icon-wrap" style="background-color: var(--accent-purple-light); color: var(--accent-purple);"><i class="fas fa-city"></i></div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.35rem;">🏗️ New Projects</h3>
+          <p class="text-muted" style="font-size: 0.8125rem; margin-bottom: 0.75rem;">
+            New Apartments, New Villas, Gated Communities, Residential & Commercial Towers.
+          </p>
+          <div style="margin-top: auto; font-size: 0.75rem; font-weight: 700; color: var(--accent-purple);" id="homeCountProj">
+            Explore Category →
+          </div>
+        </a>
+      </div>
+    </section>
+
+    <!-- Decision Intelligence Pillars Section -->
+    <section class="container" id="howItWorks" style="margin-bottom: 5rem;">
+      <div style="text-align: center; margin-bottom: 3rem;">
+        <div class="section-eyebrow"><i class="fas fa-brain text-purple"></i> Decision Intelligence</div>
+        <h2 style="font-size: 2.25rem; color: var(--text-primary);">Why HomeSphere is Different</h2>
+        <p class="text-muted" style="max-width: 600px; margin: 0.5rem auto 0;">Traditional portals only list. HomeSphere helps you discover, verify, evaluate, compare, and decide.</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.5rem;">
+        <!-- Pillar 1 -->
+        <div class="pillar-card">
+          <div class="cat-icon-wrap" style="background-color: var(--accent-emerald-light); color: var(--accent-emerald);"><i class="fas fa-shield-check"></i></div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Property Trust Score</h3>
+          <p class="text-secondary" style="font-size: 0.875rem; line-height: 1.6;">
+            A multi-dimensional audit evaluating owner registry verification, location authenticity, price benchmark sanity, and image freshness.
+          </p>
+        </div>
+
+        <!-- Pillar 2 -->
+        <div class="pillar-card">
+          <div class="cat-icon-wrap" style="background-color: var(--accent-amber-light); color: var(--accent-amber);"><i class="fas fa-calculator"></i></div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Hidden Cost Engine</h3>
+          <p class="text-secondary" style="font-size: 0.875rem; line-height: 1.6;">
+            Uncover the real first-year outlay: Base Price + Stamp Duty (7%) + Annual Maintenance + Renovation Estimates = Estimated Total Outlay.
+          </p>
+        </div>
+
+        <!-- Pillar 3 -->
+        <div class="pillar-card">
+          <div class="cat-icon-wrap" style="background-color: var(--brand-primary-light); color: var(--brand-primary);"><i class="fas fa-map-marked-alt"></i></div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">Locality LifeScore</h3>
+          <p class="text-secondary" style="font-size: 0.875rem; line-height: 1.6;">
+            Quantitative livability ratings calculated across key dimensions: Safety, Hospitals, Top Schools, Transit Connectivity, Shopping, and Environment.
+          </p>
+        </div>
+
+        <!-- Pillar 4 -->
+        <div class="pillar-card">
+          <div class="cat-icon-wrap" style="background-color: var(--accent-purple-light); color: var(--accent-purple);"><i class="fas fa-robot"></i></div>
+          <h3 style="font-size: 1.15rem; margin-bottom: 0.5rem;">AI Home Advisor</h3>
+          <p class="text-secondary" style="font-size: 0.875rem; line-height: 1.6;">
+            Conversational assistant matching natural language criteria to verified marketplace inventory with tailored recommendation cards.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Verified Featured Properties Feed -->
+    <section class="container" style="margin-bottom: 5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div class="section-eyebrow"><i class="fas fa-check-circle text-emerald"></i> Verified Inventory</div>
+          <h2 style="font-size: 2rem; color: var(--text-primary);">Featured Properties</h2>
+          <p class="text-muted">Verified properties ready for immediate site visits.</p>
+        </div>
+        <a href="/properties.html" class="btn btn-primary btn-sm">Explore All Listings →</a>
+      </div>
+
+      <div class="properties-cards-container grid-view" id="homeFeaturedGrid">
+        <div style="grid-column: 1 / -1; text-align: center; padding: 3rem;">
+          <i class="fas fa-spinner fa-spin text-brand" style="font-size: 2rem;"></i>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <div class="nav-brand" style="margin-bottom: 1rem;">
+            <div class="brand-icon"><i class="fas fa-cube"></i></div>
+            <span>Home<span class="text-brand">Sphere</span></span>
+          </div>
+          <p class="text-muted" style="font-size: 0.875rem; max-width: 320px; line-height: 1.6;">
+            HomeSphere is an AI-powered real estate marketplace and decision platform empowering users to discover, verify, compare, and decide.
+          </p>
+        </div>
+
+        <div class="footer-col">
+          <h4>Marketplace</h4>
+          <ul>
+            <li><a href="/properties.html?category=residential">Residential Homes</a></li>
+            <li><a href="/properties.html?category=land_plots">Land & Plots</a></li>
+            <li><a href="/properties.html?category=commercial">Commercial Spaces</a></li>
+            <li><a href="/properties.html?category=pg_rooms">PG & Co-Living</a></li>
+            <li><a href="/properties.html?category=new_projects">New Projects</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Decision Suite</h4>
+          <ul>
+            <li><a href="/advisor.html">AI Home Advisor</a></li>
+            <li><a href="/compare.html">Property Comparison</a></li>
+            <li><a href="/map-search.html">Live Map Search</a></li>
+            <li><a href="/properties.html?verified=true">Verified Properties</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-col">
+          <h4>Account</h4>
+          <ul>
+            <li><a href="/login.html">Sign In</a></li>
+            <li><a href="/register.html">Create Account</a></li>
+            <li><a href="/dashboard.html">User Dashboard</a></li>
+            <li><a href="/list-property.html">Post Property</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>© 2026 HomeSphere Inc. All rights reserved.</div>
+        <div>Trust • Real Estate • AI • Decision Intelligence</div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    let currentHeroPurpose = 'sale';
+    function setHeroPurpose(purpose, btn) {
+      currentHeroPurpose = purpose;
+      document.querySelectorAll('.purpose-tab-btn').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+    }
+
+    function handleHeroSearch(e) {
+      e.preventDefault();
+      const loc = document.getElementById('heroLocation').value.trim();
+      const cat = document.getElementById('heroCategory').value;
+      const budget = document.getElementById('heroBudget').value;
+      let q = `/properties.html?type=${encodeURIComponent(currentHeroPurpose)}`;
+      if (loc) q += `&city=${encodeURIComponent(loc)}`;
+      if (cat && cat !== 'all') q += `&category=${encodeURIComponent(cat)}`;
+      if (budget && budget !== 'all') q += `&budget=${encodeURIComponent(budget)}`;
+      window.location.href = q;
+    }
+
+    // Load Featured Properties and Category Stats
+    document.addEventListener('DOMContentLoaded', async () => {
+      const grid = document.getElementById('homeFeaturedGrid');
+      const token = localStorage.getItem('homesphere_token');
+      const authActions = document.getElementById('navAuthActions');
+      const brandLogoLink = document.getElementById('brandLogoLink');
+      if (token) {
+        if (brandLogoLink) brandLogoLink.href = '/dashboard.html';
+        if (authActions) {
+          authActions.innerHTML = `
+            <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>
+          `;
+        }
+      }
+
+      // Load Category Real Counts
+      try {
+        const catRes = await fetch('/api/properties/categories/stats');
+        const catData = await catRes.json();
+        if (catData.success && catData.data) {
+          const counts = catData.data;
+          if (counts.residential !== undefined && document.getElementById('homeCountRes')) {
+            document.getElementById('homeCountRes').textContent = `${counts.residential} Available Listings →`;
+          }
+          if (counts.land_plots !== undefined && document.getElementById('homeCountLand')) {
+            document.getElementById('homeCountLand').textContent = `${counts.land_plots} Available Listings →`;
+          }
+          if (counts.commercial !== undefined && document.getElementById('homeCountComm')) {
+            document.getElementById('homeCountComm').textContent = `${counts.commercial} Available Listings →`;
+          }
+          if (counts.pg_rooms !== undefined && document.getElementById('homeCountPG')) {
+            document.getElementById('homeCountPG').textContent = `${counts.pg_rooms} Available Listings →`;
+          }
+          if (counts.new_projects !== undefined && document.getElementById('homeCountProj')) {
+            document.getElementById('homeCountProj').textContent = `${counts.new_projects} Available Listings →`;
+          }
+        }
+      } catch (e) {}
+
+      // Load Featured Properties
+      try {
+        const res = await fetch('/api/properties?limit=6');
+        const data = await res.json();
+        if (data.success && data.data && data.data.properties && data.data.properties.length > 0) {
+          const props = data.data.properties;
+          grid.innerHTML = props.map(p => {
+            let priceDisplay = `₹${Number(p.price).toLocaleString()}`;
+            if (p.price >= 10000000) priceDisplay = `₹${(p.price / 10000000).toFixed(2)} Cr`;
+            else if (p.price >= 100000) priceDisplay = `₹${(p.price / 100000).toFixed(2)} Lakhs`;
+            if (p.type === 'rent' || p.type === 'lease') priceDisplay = `₹${Number(p.price).toLocaleString()}/mo`;
+
+            const typeBadge = (p.type === 'sale' || p.type === 'buy') ? 'badge-sale' : (p.type === 'rent' ? 'badge-rent' : 'badge-lease');
+            const typeLabel = (p.type === 'sale' || p.type === 'buy') ? 'FOR SALE' : (p.type === 'rent' ? 'FOR RENT' : 'FOR LEASE');
+            const defaultImg = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80';
+            const imgSrc = p.primary_image || defaultImg;
+
+            return `
+              <div class="prop-card-clean">
+                <div class="prop-card-media">
+                  <img src="${imgSrc}" alt="${p.title}" class="prop-card-img" loading="lazy">
+                  <div class="prop-top-badges">
+                    <span class="badge ${typeBadge}">${typeLabel}</span>
+                    ${p.is_verified ? '<span class="badge badge-verified">✓ Verified</span>' : ''}
+                  </div>
+                </div>
+
+                <div class="prop-card-content">
+                  <div class="prop-card-price-row">
+                    <div class="prop-card-price">${priceDisplay}</div>
+                    ${p.match_score ? `<span class="score-pill match"><i class="fas fa-sparkles"></i> ${p.match_score}% Fit</span>` : ''}
+                  </div>
+
+                  <h3 class="prop-card-title"><a href="/property-details.html?id=${p.id}">${p.title}</a></h3>
+                  <div class="prop-card-location"><i class="fas fa-map-marker-alt text-brand"></i> ${p.address || ''}, ${p.city}</div>
+
+                  <div class="prop-card-specs">
+                    ${p.bedrooms > 0 ? `<span><i class="fas fa-bed"></i> ${p.bedrooms} Beds</span>` : ''}
+                    ${p.bathrooms > 0 ? `<span><i class="fas fa-bath"></i> ${p.bathrooms} Baths</span>` : ''}
+                    <span><i class="fas fa-vector-square"></i> ${Number(p.area_sqft || 0).toLocaleString()} sq.ft</span>
+                  </div>
+
+                  <div class="prop-card-footer">
+                    ${p.trust_score ? `<span class="score-pill trust"><i class="fas fa-shield-check"></i> Trust: ${p.trust_score}/100</span>` : '<span class="text-muted" style="font-size:0.75rem;">Trust: Not available</span>'}
+                    <a href="/property-details.html?id=${p.id}" class="btn btn-secondary btn-sm">View Details</a>
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        } else {
+          grid.innerHTML = `
+            <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+              <i class="fas fa-home text-muted" style="font-size: 2rem; margin-bottom: 0.75rem;"></i>
+              <h4 style="color: var(--text-primary); margin-bottom: 0.25rem;">No properties available yet.</h4>
+              <p class="text-secondary" style="font-size: 0.875rem;">Check back soon as new verified properties are listed.</p>
+            </div>
+          `;
+        }
+      } catch (e) {
+        console.error(e);
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+            <p class="text-muted">No properties available yet.</p>
+          </div>
+        `;
+      }
+    });
+  </script>
+</body>
+</html>

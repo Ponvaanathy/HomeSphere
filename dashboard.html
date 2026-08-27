@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Dashboard | HomeSphere</title>
+  <meta name="description" content="HomeSphere User Dashboard: View personalized property recommendations, saved shortlists, comparison matrices, and listing portfolios.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/properties.css">
+</head>
+<body>
+
+  <!-- Top Navigation Header -->
+  <nav class="navbar">
+    <div class="container" style="max-width: 100%; padding: 0 1.5rem;">
+      <a href="/dashboard.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <!-- Header Search & Location -->
+      <div style="display: flex; align-items: center; gap: 1rem; flex: 1; max-width: 540px; margin: 0 2rem;">
+        <div style="position: relative; flex: 1;">
+          <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.875rem;"></i>
+          <input type="text" id="headerSearchInput" class="form-input" placeholder="Search by city, locality, project..." style="padding-left: 2.5rem; height: 40px;">
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.4rem; background: var(--bg-surface-alt); padding: 0.4rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); white-space: nowrap;">
+          <i class="fas fa-map-marker-alt text-brand"></i>
+          <span id="headerLocationLabel">Coimbatore, TN</span>
+        </div>
+      </div>
+
+      <!-- Header User Profile & Notifications -->
+      <div class="nav-actions">
+        <a href="/notifications.html" class="btn btn-secondary btn-sm" style="position: relative; padding: 0.45rem 0.75rem;">
+          <i class="fas fa-bell"></i>
+          <span id="unreadNotifDot" style="display: none; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; background-color: var(--accent-rose); border-radius: 50%;"></span>
+        </a>
+
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;" id="dashAvatarInitial">U</div>
+          <div style="text-align: left; line-height: 1.2;">
+            <div style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary);" id="dashHeaderUserName">User Account</div>
+            <div class="text-muted" style="font-size: 0.72rem;" id="dashUserRoleBadge">Verified Account</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Dashboard Main Layout -->
+  <div class="dashboard-layout" style="padding-top: var(--header-height);">
+
+    <!-- Left Sidebar -->
+    <aside class="dashboard-sidebar">
+      <div class="sidebar-heading">Navigation</div>
+      <a href="/dashboard.html" class="sidebar-nav-item active"><i class="fas fa-th-large"></i> Dashboard</a>
+      <a href="/properties.html" class="sidebar-nav-item"><i class="fas fa-search"></i> Explore Properties</a>
+      <a href="/index.html#categoriesSection" class="sidebar-nav-item"><i class="fas fa-layer-group"></i> Categories</a>
+      <a href="/saved.html" class="sidebar-nav-item"><i class="far fa-heart"></i> Saved Properties</a>
+      <a href="/compare.html" class="sidebar-nav-item"><i class="fas fa-balance-scale"></i> Compare</a>
+      <a href="/advisor.html" class="sidebar-nav-item"><i class="fas fa-robot text-purple"></i> AI Home Advisor</a>
+      <a href="/map-search.html" class="sidebar-nav-item"><i class="fas fa-map-marked-alt"></i> Live Map Search</a>
+
+      <div class="sidebar-heading" style="margin-top: 1rem;">Owner & Portfolio</div>
+      <a href="/my-listings.html" class="sidebar-nav-item"><i class="fas fa-building text-emerald"></i> My Listings</a>
+      <a href="/list-property.html" class="sidebar-nav-item"><i class="fas fa-plus-circle text-emerald"></i> Post Property</a>
+      <a href="/notifications.html" class="sidebar-nav-item"><i class="far fa-bell"></i> Property Alerts</a>
+      <a href="/messages.html" class="sidebar-nav-item"><i class="far fa-comment-dots"></i> Messages</a>
+
+      <div class="sidebar-heading" style="margin-top: 1rem;">Settings</div>
+      <a href="/profile.html" class="sidebar-nav-item"><i class="fas fa-user-cog"></i> Profile & Preferences</a>
+      <a href="#" onclick="handleLogout()" class="sidebar-nav-item" style="color: var(--accent-rose); margin-top: auto;">
+        <i class="fas fa-sign-out-alt"></i> Logout
+      </a>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-main-area">
+
+      <!-- Header Title -->
+      <div class="dashboard-welcome-banner">
+        <div>
+          <div class="section-eyebrow"><i class="fas fa-th-large text-brand"></i> Activity & Decision Hub</div>
+          <h1 style="font-size: 2rem; color: var(--text-primary); margin-top: 0.25rem;">
+            Property Dashboard
+          </h1>
+          <p class="text-secondary" style="font-size: 0.95rem;">
+            Track your real-time property activity, market recommendations, and decision analytics.
+          </p>
+        </div>
+
+        <a href="/list-property.html" class="btn btn-emerald">
+          <i class="fas fa-plus"></i> List Your Property
+        </a>
+      </div>
+
+      <!-- 4 Summary Analytics Metric Cards -->
+      <div class="summary-cards-grid">
+        <!-- 1. Properties Viewed -->
+        <div class="summary-metric-card">
+          <div class="summary-icon-box blue"><i class="fas fa-eye"></i></div>
+          <div>
+            <div class="summary-metric-num" id="statPropsViewed">0</div>
+            <div class="summary-metric-label">Properties Viewed</div>
+          </div>
+        </div>
+
+        <!-- 2. Saved Properties -->
+        <div class="summary-metric-card">
+          <div class="summary-icon-box emerald" style="background-color: var(--accent-emerald-light); color: var(--accent-emerald);"><i class="fas fa-heart"></i></div>
+          <div>
+            <div class="summary-metric-num" id="statSavedProps">0</div>
+            <div class="summary-metric-label">Saved Properties</div>
+          </div>
+        </div>
+
+        <!-- 3. Comparisons -->
+        <div class="summary-metric-card">
+          <div class="summary-icon-box amber"><i class="fas fa-balance-scale"></i></div>
+          <div>
+            <div class="summary-metric-num" id="statComparisons">0</div>
+            <div class="summary-metric-label">Comparisons</div>
+          </div>
+        </div>
+
+        <!-- 4. Recommended Properties -->
+        <div class="summary-metric-card">
+          <div class="summary-icon-box purple"><i class="fas fa-sparkles"></i></div>
+          <div>
+            <div class="summary-metric-num" id="statRecommended">0</div>
+            <div class="summary-metric-label">Recommended Properties</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Search Section: What are you looking for? -->
+      <div class="quick-search-card">
+        <h3 style="font-size: 1.15rem; margin-bottom: 0.25rem;">What are you looking for?</h3>
+        <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1.25rem;">Filter by location, category, BHK, and purpose.</p>
+
+        <form id="dashQuickSearchForm" onsubmit="handleQuickSearch(event)">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; align-items: flex-end;">
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="qsLocation">Location</label>
+              <input type="text" id="qsLocation" class="form-input" placeholder="e.g. Coimbatore, Peelamedu">
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="qsCategory">Category</label>
+              <select id="qsCategory" class="form-select">
+                <option value="residential" selected>🏠 Residential</option>
+                <option value="land_plots">🌳 Land & Plots</option>
+                <option value="commercial">🏢 Commercial</option>
+                <option value="pg_rooms">🛏️ PG & Rooms</option>
+                <option value="new_projects">🏗️ New Projects</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="qsPurpose">Purpose</label>
+              <select id="qsPurpose" class="form-select">
+                <option value="sale" selected>🟢 For Sale</option>
+                <option value="rent">🔵 For Rent</option>
+                <option value="lease">🟠 For Lease</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="margin-bottom: 0;">
+              <label class="form-label" for="qsBHK">Bedrooms</label>
+              <select id="qsBHK" class="form-select">
+                <option value="all" selected>Any BHK</option>
+                <option value="1">1 BHK</option>
+                <option value="2">2 BHK</option>
+                <option value="3">3 BHK</option>
+                <option value="4">4+ BHK</option>
+              </select>
+            </div>
+
+            <div>
+              <button type="submit" class="btn btn-primary" style="width: 100%; height: 42px;">
+                <i class="fas fa-search"></i> Find Properties
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <!-- Explore by Category Section -->
+      <div style="margin-bottom: 2.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.25rem;">
+          <h3 style="font-size: 1.25rem; color: var(--text-primary);">Explore by Category</h3>
+          <a href="/properties.html" class="text-brand font-bold" style="font-size: 0.8125rem;">View All →</a>
+        </div>
+
+        <div class="category-explorer-grid">
+          <!-- 1. Residential -->
+          <a href="/properties.html?category=residential" class="cat-explore-card">
+            <div class="cat-icon-circle"><i class="fas fa-home"></i></div>
+            <strong style="color: var(--text-primary); font-size: 1rem;">🏠 Residential</strong>
+            <div class="text-muted" style="font-size: 0.8rem;">Apartments, Villas, Flats, Duplex</div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--brand-primary); margin-top: auto;" id="catCountRes">Explore Category →</div>
+          </a>
+
+          <!-- 2. Land & Plots -->
+          <a href="/properties.html?category=land_plots" class="cat-explore-card">
+            <div class="cat-icon-circle" style="background-color: var(--accent-emerald-light); color: var(--accent-emerald);"><i class="fas fa-tree"></i></div>
+            <strong style="color: var(--text-primary); font-size: 1rem;">🌳 Land & Plots</strong>
+            <div class="text-muted" style="font-size: 0.8rem;">Residential Plots & Farmlands</div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-emerald); margin-top: auto;" id="catCountLand">Explore Category →</div>
+          </a>
+
+          <!-- 3. Commercial -->
+          <a href="/properties.html?category=commercial" class="cat-explore-card">
+            <div class="cat-icon-circle" style="background-color: var(--accent-cyan-light); color: var(--accent-cyan);"><i class="fas fa-building"></i></div>
+            <strong style="color: var(--text-primary); font-size: 1rem;">🏢 Commercial</strong>
+            <div class="text-muted" style="font-size: 0.8rem;">Offices, Shops, Showrooms</div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-cyan); margin-top: auto;" id="catCountComm">Explore Category →</div>
+          </a>
+
+          <!-- 4. PG & Rooms -->
+          <a href="/properties.html?category=pg_rooms" class="cat-explore-card">
+            <div class="cat-icon-circle" style="background-color: var(--accent-amber-light); color: var(--accent-amber);"><i class="fas fa-bed"></i></div>
+            <strong style="color: var(--text-primary); font-size: 1rem;">🛏️ PG & Rooms</strong>
+            <div class="text-muted" style="font-size: 0.8rem;">Single & Shared Co-living</div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-amber); margin-top: auto;" id="catCountPG">Explore Category →</div>
+          </a>
+
+          <!-- 5. New Projects -->
+          <a href="/properties.html?category=new_projects" class="cat-explore-card">
+            <div class="cat-icon-circle" style="background-color: var(--accent-purple-light); color: var(--accent-purple);"><i class="fas fa-city"></i></div>
+            <strong style="color: var(--text-primary); font-size: 1rem;">🏗️ New Projects</strong>
+            <div class="text-muted" style="font-size: 0.8rem;">Upcoming Gated Communities</div>
+            <div style="font-size: 0.75rem; font-weight: 700; color: var(--accent-purple); margin-top: auto;" id="catCountProj">Explore Category →</div>
+          </a>
+        </div>
+      </div>
+
+      <!-- AI Recommended Properties Feed -->
+      <div style="margin-bottom: 2.5rem;">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 1.25rem;">
+          <div>
+            <h3 style="font-size: 1.25rem; color: var(--text-primary);">Recommended For You</h3>
+            <p class="text-muted" style="font-size: 0.8125rem;">Matched by Trust Score, Locality LifeScore, and budget criteria.</p>
+          </div>
+          <a href="/properties.html" class="text-brand font-bold" style="font-size: 0.8125rem;">Browse All →</a>
+        </div>
+
+        <div class="properties-cards-container grid-view" id="dashRecommendationsGrid">
+          <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
+            <i class="fas fa-spinner fa-spin text-brand"></i>
+          </div>
+        </div>
+      </div>
+
+    </main>
+  </div>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/dashboard.js"></script>
+</body>
+</html>

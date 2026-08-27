@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Home Advisor | HomeSphere Real Estate Intelligence</title>
+  <meta name="description" content="HomeSphere AI Home Advisor: Intelligent property decision assistant for legal verification, hidden costs, locality intelligence, and investment analysis.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/advisor.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link active"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main AI Workspace -->
+  <main class="main-content" style="padding-top: 5.25rem; padding-bottom: 2.5rem;">
+    <div class="container" style="max-width: 1240px;">
+
+      <!-- Workspace 2-Column Layout -->
+      <div class="advisor-page-layout">
+
+        <!-- Left / Main Conversation Area -->
+        <div class="ai-main-area">
+
+          <!-- AI Header Card -->
+          <div class="ai-header-card">
+            <div class="ai-header-content">
+              <div class="ai-avatar-glow">
+                <i class="fas fa-robot"></i>
+              </div>
+              <div>
+                <div class="section-eyebrow" style="margin-bottom: 0.15rem;">
+                  <i class="fas fa-brain text-purple"></i> DECISION INTELLIGENCE ASSISTANT
+                </div>
+                <h1 style="font-size: 1.5rem; color: var(--text-primary); margin: 0; line-height: 1.2;">
+                  HomeSphere <span class="text-purple">AI Advisor</span>
+                </h1>
+                <p class="text-secondary" style="font-size: 0.875rem; margin: 0.25rem 0 0 0;">
+                  Your intelligent property decision assistant for legal verification, cost analysis, and valuation.
+                </p>
+              </div>
+            </div>
+
+            <div style="text-align: right;">
+              <div class="ai-status-pulse">
+                <span class="pulse-dot"></span> Online
+              </div>
+              <div class="text-muted" style="font-size: 0.72rem; margin-top: 0.35rem; font-weight: 600;">
+                Engine Matrix v2.6
+              </div>
+            </div>
+          </div>
+
+          <!-- Property Context Selector Card -->
+          <div class="property-context-card">
+            <label for="propertyContextSelect" class="context-label">
+              <i class="fas fa-search-location text-brand"></i> ANALYZE PROPERTY:
+            </label>
+            <select id="propertyContextSelect" class="context-select">
+              <option value="">🌐 General Market Guidance</option>
+            </select>
+          </div>
+
+          <!-- Main AI Chat Card -->
+          <div class="ai-chat-card">
+
+            <!-- Chat Header -->
+            <div class="ai-chat-header">
+              <div class="ai-chat-header-title">
+                <div style="width: 28px; height: 28px; border-radius: 50%; background: var(--accent-purple-light); color: var(--accent-purple); display: flex; align-items: center; justify-content: center; font-size: 0.85rem;">
+                  <i class="fas fa-robot"></i>
+                </div>
+                <div>
+                  <h4>HomeSphere AI Assistant</h4>
+                </div>
+              </div>
+
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="badge badge-trust" style="font-size: 0.68rem;" id="chatContextBadge">General Mode</span>
+                <button type="button" onclick="resetChatHistory()" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.25rem 0.6rem;" title="Reset Conversation">
+                  <i class="fas fa-redo-alt"></i> Reset
+                </button>
+              </div>
+            </div>
+
+            <!-- Chat Message Stream -->
+            <div class="ai-chat-stream" id="chatHistory">
+
+              <!-- Initial Welcome & Quick Action Card -->
+              <div class="ai-welcome-box" id="welcomeBox">
+                <div class="ai-welcome-title">
+                  <i class="fas fa-sparkles text-purple"></i> How can I help you with your property decision?
+                </div>
+                <p class="ai-welcome-text">
+                  Ask me about property costs, location intelligence, legal verification, investment potential, or whether buying or renting makes more sense.
+                </p>
+
+                <!-- Quick Action Cards Grid -->
+                <div class="quick-actions-grid">
+                  <div class="quick-action-card" data-prompt="What are the estimated hidden costs and total first-year outlay for this property?">
+                    <div class="quick-action-icon text-amber"><i class="fas fa-calculator"></i></div>
+                    <div class="quick-action-title">Hidden Costs</div>
+                    <div class="quick-action-desc">Understand complete closing & setup outlay</div>
+                  </div>
+
+                  <div class="quick-action-card" data-prompt="Is the legal title verified and free of encumbrance risks?">
+                    <div class="quick-action-icon text-brand"><i class="fas fa-shield-alt"></i></div>
+                    <div class="quick-action-title">Legal Verification</div>
+                    <div class="quick-action-desc">Check title deed & legal clearance</div>
+                  </div>
+
+                  <div class="quick-action-card" data-prompt="What is the 5-year capital appreciation forecast for this locality?">
+                    <div class="quick-action-icon text-emerald"><i class="fas fa-chart-line"></i></div>
+                    <div class="quick-action-title">Capital Growth</div>
+                    <div class="quick-action-desc">Explore future 5-year appreciation</div>
+                  </div>
+
+                  <div class="quick-action-card" data-prompt="Analyze the neighborhood safety, school rating, and transit connectivity.">
+                    <div class="quick-action-icon text-cyan"><i class="fas fa-school"></i></div>
+                    <div class="quick-action-title">Location Intelligence</div>
+                    <div class="quick-action-desc">Schools, safety & transit LifeScores</div>
+                  </div>
+
+                  <div class="quick-action-card" data-prompt="Buy vs Rent: Explain the financial break-even and comparison.">
+                    <div class="quick-action-icon text-purple"><i class="fas fa-balance-scale"></i></div>
+                    <div class="quick-action-title">Buy vs Rent</div>
+                    <div class="quick-action-desc">Compare long-term financial outcomes</div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Suggestion Chips Bar -->
+            <div class="suggestion-chips-bar" id="suggestionChipsBar">
+              <div class="suggestion-chip" data-prompt="Is this property worth the price?">
+                <i class="fas fa-tags text-brand"></i> Is this property worth the price?
+              </div>
+              <div class="suggestion-chip" data-prompt="Estimate total first-year outlay including registration and maintenance">
+                <i class="fas fa-calculator text-amber"></i> Estimate total outlay
+              </div>
+              <div class="suggestion-chip" data-prompt="How is the neighborhood safety and transit connectivity?">
+                <i class="fas fa-shield-alt text-emerald"></i> How is the location?
+              </div>
+              <div class="suggestion-chip" data-prompt="Buy vs Rent: Which option makes more financial sense?">
+                <i class="fas fa-balance-scale text-purple"></i> Buy or rent?
+              </div>
+              <div class="suggestion-chip" data-prompt="Check property legal risks and audit status">
+                <i class="fas fa-exclamation-triangle text-rose"></i> Check property risks
+              </div>
+            </div>
+
+            <!-- Premium Chat Composer Form -->
+            <form class="chat-composer-form" id="advisorForm" onsubmit="handleFormSubmit(event)">
+              <input type="text" id="advisorInput" class="chat-composer-input" placeholder="Ask HomeSphere AI anything about your property, costs, or location..." autocomplete="off" required>
+              <button type="submit" class="chat-send-btn" id="btnAdvisorSend" title="Send message">
+                <i class="fas fa-paper-plane"></i>
+              </button>
+            </form>
+
+          </div>
+
+        </div>
+
+        <!-- Right Side: AI Insights & Property Context Panel -->
+        <aside class="ai-insights-panel">
+
+          <!-- AI Engine Status Card -->
+          <div class="ai-engine-status-box">
+            <div>
+              <div style="font-size: 0.68rem; font-weight: 800; letter-spacing: 0.05em; color: #a5b4fc;">AI ENGINE</div>
+              <div style="font-size: 0.95rem; font-weight: 700; color: #ffffff;">Decision Intelligence 4.0</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: #34d399; font-weight: 700;">
+              <span class="pulse-dot" style="width: 7px; height: 7px;"></span> Online
+            </div>
+          </div>
+
+          <!-- Property Insights Card -->
+          <div class="insights-card" id="propertyInsightsCard">
+            <div class="insights-card-header">
+              <div class="insights-card-title">
+                <i class="fas fa-chart-pie text-brand"></i> Property Insights
+              </div>
+              <span class="badge badge-trust" style="font-size: 0.65rem;" id="insightsStatusBadge">Live Data</span>
+            </div>
+
+            <div id="insightsContent">
+              <!-- Empty State (Default) -->
+              <div class="insights-empty-state" id="insightsEmptyState">
+                <div class="insights-empty-icon">
+                  <i class="fas fa-building"></i>
+                </div>
+                <h4 style="color: var(--text-primary); font-size: 0.95rem; margin-bottom: 0.35rem;">No Property Selected</h4>
+                <p style="font-size: 0.8125rem; line-height: 1.4; margin-bottom: 1rem;">
+                  Select a property from the dropdown above to unlock real-time Trust Scores, LifeScore neighborhood analysis, and transparent hidden cost breakdowns.
+                </p>
+                <a href="/properties.html" class="btn btn-secondary btn-sm" style="font-size: 0.78rem;">
+                  <i class="fas fa-search"></i> Browse Properties
+                </a>
+              </div>
+
+              <!-- Selected Property Details Box (Hidden until property is selected) -->
+              <div class="property-preview-box" id="insightsPropertyBox" style="display: none;">
+                <img src="" alt="Property" class="prop-thumb-img" id="insightsPropImg">
+                <div>
+                  <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem;">
+                    <span class="badge badge-sale" id="insightsPropTypeBadge">FOR SALE</span>
+                    <strong style="font-size: 1.15rem; color: var(--brand-primary);" id="insightsPropPrice">₹0</strong>
+                  </div>
+                  <div class="prop-preview-title" id="insightsPropTitle">Property Title</div>
+                  <div class="prop-preview-meta" style="margin-top: 0.25rem;">
+                    <i class="fas fa-map-marker-alt text-brand"></i>
+                    <span id="insightsPropLocation">City, State</span>
+                  </div>
+                </div>
+
+                <div class="insights-metrics-grid">
+                  <div class="metric-pill-box">
+                    <div class="num text-brand" id="insightsTrustScore">—</div>
+                    <div class="lbl"><i class="fas fa-shield-alt"></i> Trust Score</div>
+                  </div>
+                  <div class="metric-pill-box">
+                    <div class="num text-emerald" id="insightsLifeScore">—</div>
+                    <div class="lbl"><i class="fas fa-heart"></i> LifeScore</div>
+                  </div>
+                  <div class="metric-pill-box">
+                    <div class="num text-purple" id="insightsBeds">—</div>
+                    <div class="lbl"><i class="fas fa-bed"></i> Bedrooms</div>
+                  </div>
+                  <div class="metric-pill-box">
+                    <div class="num text-cyan" id="insightsArea">—</div>
+                    <div class="lbl"><i class="fas fa-vector-square"></i> Area</div>
+                  </div>
+                </div>
+
+                <div style="margin-top: 0.5rem;">
+                  <a href="#" id="insightsViewLink" class="btn btn-primary btn-sm" style="width: 100%; text-align: center;">
+                    <i class="fas fa-external-link-alt"></i> View Full Details
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Decision Framework Highlights Card -->
+          <div class="insights-card">
+            <div class="insights-card-header">
+              <div class="insights-card-title">
+                <i class="fas fa-brain text-purple"></i> Decision Pillars
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.65rem; font-size: 0.8125rem;">
+              <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                <i class="fas fa-check-circle text-emerald" style="margin-top: 0.15rem;"></i>
+                <div><strong>Verified Property DNA</strong><br><span class="text-muted">Legal title clearance & builder audit</span></div>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                <i class="fas fa-check-circle text-emerald" style="margin-top: 0.15rem;"></i>
+                <div><strong>Hidden Cost Engine</strong><br><span class="text-muted">Stamp duty, maintenance & fit-out outlay</span></div>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                <i class="fas fa-check-circle text-emerald" style="margin-top: 0.15rem;"></i>
+                <div><strong>Locality LifeScore Radar</strong><br><span class="text-muted">Safety, hospital & school density index</span></div>
+              </div>
+              <div style="display: flex; align-items: flex-start; gap: 0.5rem;">
+                <i class="fas fa-check-circle text-emerald" style="margin-top: 0.15rem;"></i>
+                <div><strong>5-Year Capital Forecast</strong><br><span class="text-muted">CAGR appreciation & resale velocity</span></div>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+
+      </div>
+
+    </div>
+  </main>
+
+  <script src="/js/advisor.js"></script>
+</body>
+</html>

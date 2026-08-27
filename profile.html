@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Profile & Preferences | HomeSphere</title>
+  <meta name="description" content="Manage your personal profile, real estate preferences, and account settings.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/dashboard.html" class="btn btn-primary btn-sm">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container" style="max-width: 800px;">
+
+      <div style="margin-bottom: 2rem;">
+        <div class="section-eyebrow"><i class="fas fa-user-cog"></i> ACCOUNT & ACTIVITY</div>
+        <h1 style="font-size: 2rem; color: var(--text-primary); margin-top: 0.25rem;">User Profile & Preferences</h1>
+        <p class="text-secondary">Manage your universal HomeSphere account for buying, renting, and listing properties.</p>
+      </div>
+
+      <!-- User Activity Stats Grid -->
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 2rem;">
+        <div class="card" style="padding: 1.25rem; text-align: center;">
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--brand-primary);" id="profStatListed">0</div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 0.25rem;">Properties Listed</div>
+        </div>
+        <div class="card" style="padding: 1.25rem; text-align: center;">
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-rose);" id="profStatSaved">0</div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 0.25rem;">Saved Properties</div>
+        </div>
+        <div class="card" style="padding: 1.25rem; text-align: center;">
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-purple);" id="profStatCompare">0</div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 0.25rem;">Comparisons</div>
+        </div>
+        <div class="card" style="padding: 1.25rem; text-align: center;">
+          <div style="font-size: 1.5rem; font-weight: 800; color: var(--accent-emerald);" id="profStatMessages">0</div>
+          <div style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 0.25rem;">Messages</div>
+        </div>
+      </div>
+
+      <!-- Profile Card -->
+      <div class="card" style="padding: 2.25rem; margin-bottom: 2rem;">
+        <h3 style="font-size: 1.15rem; margin-bottom: 1.5rem;">Personal Information</h3>
+
+        <form id="userProfileForm" onsubmit="handleSaveProfile(event)">
+          <div style="display: flex; align-items: center; gap: 1.25rem; margin-bottom: 1.75rem;">
+            <div style="width: 72px; height: 72px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: 700;" id="profileAvatarInit">
+              U
+            </div>
+            <div>
+              <h4 id="profileDisplayName" style="font-size: 1.15rem; color: var(--text-primary);">User Profile</h4>
+              <span class="badge badge-trust" id="profileRoleBadge">Verified HomeSphere Account</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;">
+            <div class="form-group">
+              <label class="form-label" for="profName">Full Name *</label>
+              <input type="text" id="profName" class="form-input" placeholder="Your full name" required style="width: 100%;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="profEmail">Email Address *</label>
+              <input type="email" id="profEmail" class="form-input" placeholder="name@example.com" required style="width: 100%;">
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="form-label" for="profPhone">Phone Number</label>
+            <input type="tel" id="profPhone" class="form-input" placeholder="+91 00000 00000" style="width: 100%;">
+          </div>
+
+          <h3 style="font-size: 1.15rem; margin: 2rem 0 1rem 0;">AI Matching Preferences</h3>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem;">
+            <div class="form-group">
+              <label class="form-label" for="prefCity">Preferred City / Locality</label>
+              <input type="text" id="prefCity" class="form-input" placeholder="e.g. Coimbatore, Peelamedu" style="width: 100%;">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="prefCategory">Preferred Category</label>
+              <select id="prefCategory" class="form-select" style="width: 100%;">
+                <option value="residential" selected>🏠 Residential</option>
+                <option value="land_plots">🌳 Land & Plots</option>
+                <option value="commercial">🏢 Commercial</option>
+                <option value="pg_rooms">🛏️ PG & Rooms</option>
+                <option value="new_projects">🏗️ New Projects</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" onclick="handleLogout()" class="btn btn-secondary" style="color: var(--accent-rose);">
+              <i class="fas fa-sign-out-alt"></i> Logout
+            </button>
+          </div>
+        </form>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/profile.js"></script>
+</body>
+</html>

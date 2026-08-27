@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Side-by-Side Property Comparison Matrix | HomeSphere</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/compare.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link active">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container">
+
+      <div style="margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <h1>Multi-Property <span class="gradient-text">Comparison Matrix</span></h1>
+          <p class="text-secondary">Side-by-side quantitative breakdown across AI Trust, Property DNA, LifeScore, and Hidden Costs.</p>
+        </div>
+        <a href="/properties.html" class="btn btn-primary btn-sm"><i class="fas fa-search"></i> Browse More Listings</a>
+      </div>
+
+      <!-- Compare Matrix Container -->
+      <div class="compare-container">
+        <div class="glass-card" style="padding: 2rem;" id="compareMatrixWrapper">
+          <div class="spinner"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>&copy; 2026 HomeSphere AI Platform.</p>
+        <div style="display:flex;gap:1.5rem;">
+          <a href="/properties.html" class="text-muted">Discover</a>
+          <a href="/advisor.html" class="text-muted">AI Advisor</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/js/compare.js"></script>
+</body>
+</html>

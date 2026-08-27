@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notifications & Alerts | HomeSphere</title>
+  <meta name="description" content="Stay updated with instant property match notifications, price drops, and seller enquiry updates.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    .notif-item-card {
+      background-color: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+      box-shadow: var(--shadow-xs);
+      transition: all var(--transition-fast);
+    }
+    .notif-item-card.unread {
+      border-left: 4px solid var(--brand-primary);
+      background-color: var(--brand-primary-light);
+    }
+    .notif-icon-box {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/dashboard.html" class="btn btn-primary btn-sm">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container" style="max-width: 800px;">
+
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div class="section-eyebrow"><i class="fas fa-bell text-brand"></i> ACTIVITY FEED</div>
+          <h1 style="font-size: 2rem; color: var(--text-primary); margin-top: 0.25rem;">Notification Center</h1>
+          <p class="text-secondary">Instant alerts on matching properties, price updates, and verification status.</p>
+        </div>
+
+        <button type="button" onclick="markAllRead()" class="btn btn-secondary btn-sm" id="btnMarkAllRead" style="display: none;">
+          <i class="fas fa-check-double"></i> Mark All as Read
+        </button>
+      </div>
+
+      <!-- Notifications List -->
+      <div id="notificationsFeed">
+        <div style="text-align: center; padding: 4rem 2rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <div style="width: 56px; height: 56px; border-radius: 50%; background: var(--bg-surface-alt); display: flex; align-items: center; justify-content: center; margin: 0 auto 1rem; font-size: 1.5rem; color: var(--text-muted);">
+            <i class="far fa-bell"></i>
+          </div>
+          <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">No notifications yet.</h3>
+          <p class="text-secondary" style="max-width: 420px; margin: 0 auto 1.5rem;">You will receive alerts here when matching properties are listed or verification audits are updated.</p>
+          <a href="/properties.html" class="btn btn-primary btn-sm">Browse Marketplace</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      const token = localStorage.getItem('homesphere_token');
+      if (!token) {
+        window.location.href = '/login.html';
+        return;
+      }
+      loadNotifications(token);
+    });
+
+    async function loadNotifications(token) {
+      try {
+        const res = await fetch('/api/users/dashboard-stats', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        // If there are real unread notifications or messages, render them
+        const feed = document.getElementById('notificationsFeed');
+        if (data.success && data.data && data.data.unread_messages > 0) {
+          document.getElementById('btnMarkAllRead').style.display = 'inline-flex';
+          feed.innerHTML = `
+            <div class="notif-item-card unread">
+              <div class="notif-icon-box" style="background-color: var(--accent-amber-light); color: var(--accent-amber);">
+                <i class="fas fa-comments"></i>
+              </div>
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                  <strong style="color: var(--text-primary); font-size: 0.95rem;">New Messages Received</strong>
+                  <span class="text-muted" style="font-size: 0.75rem;">Just now</span>
+                </div>
+                <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: 0.5rem;">
+                  You have ${data.data.unread_messages} unread message(s) regarding your property listings.
+                </p>
+                <a href="/messages.html" class="btn btn-secondary btn-sm">Open Messages →</a>
+              </div>
+            </div>
+          `;
+        }
+      } catch (e) {}
+    }
+
+    function markAllRead() {
+      document.querySelectorAll('.notif-item-card.unread').forEach(c => c.classList.remove('unread'));
+      showToast('All notifications marked as read.', 'success');
+    }
+
+    function showToast(message, type = 'info') {
+      let container = document.getElementById('toast-container');
+      if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+      }
+      const toast = document.createElement('div');
+      toast.className = `toast toast-${type}`;
+      toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:1.1rem;margin-left:auto;">&times;</button>`;
+      container.appendChild(toast);
+      setTimeout(() => toast.remove(), 4000);
+    }
+  </script>
+</body>
+</html>

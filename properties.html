@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Properties Marketplace & Decision Filters | HomeSphere</title>
+  <meta name="description" content="Browse, filter, and evaluate verified real estate properties across residential, plots, commercial, and PG with Trust Scores and AI match metrics.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/properties.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link active">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/login.html" class="btn btn-secondary btn-sm">Sign In</a>
+        <a href="/register.html" class="btn btn-primary btn-sm">Get Started</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Marketplace Layout -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Breadcrumb & Headline -->
+      <div style="margin-bottom: 2rem;">
+        <div class="section-eyebrow"><i class="fas fa-search-location"></i> Real-Time Marketplace</div>
+        <h1 style="font-size: 2.25rem; color: var(--text-primary); margin-top: 0.25rem;" id="marketMainHeading">
+          Explore Properties
+        </h1>
+        <p class="text-muted" id="marketSubtitle">Browse verified property listings across categories.</p>
+      </div>
+
+      <div class="properties-marketplace-layout">
+
+        <!-- Left Filter Sidebar -->
+        <aside class="properties-filter-panel">
+          <div class="filter-panel-header">
+            <h3 style="font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+              <i class="fas fa-sliders-h text-brand"></i> Filters
+            </h3>
+            <button type="button" onclick="resetAllFilters()" class="btn btn-secondary btn-sm" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">
+              Reset
+            </button>
+          </div>
+
+          <form id="marketplaceFilterForm" onsubmit="handleFilterSubmit(event)">
+
+            <!-- Location -->
+            <div class="filter-section-group">
+              <label class="filter-header-label" for="filterCity">Location / City</label>
+              <input type="text" id="filterCity" class="form-input" placeholder="City or Locality">
+            </div>
+
+            <!-- Transaction Purpose (Sale / Rent / Lease) -->
+            <div class="filter-section-group">
+              <label class="filter-header-label">Transaction Purpose</label>
+              <div style="display: flex; gap: 0.35rem; flex-wrap: wrap;">
+                <button type="button" class="btn btn-secondary btn-sm purpose-pill active" onclick="setFilterPurpose('all', this)">All</button>
+                <button type="button" class="btn btn-secondary btn-sm purpose-pill" onclick="setFilterPurpose('sale', this)">🟢 Sale</button>
+                <button type="button" class="btn btn-secondary btn-sm purpose-pill" onclick="setFilterPurpose('rent', this)">🔵 Rent</button>
+                <button type="button" class="btn btn-secondary btn-sm purpose-pill" onclick="setFilterPurpose('lease', this)">🟠 Lease</button>
+              </div>
+            </div>
+
+            <!-- Category -->
+            <div class="filter-section-group">
+              <label class="filter-header-label" for="filterCategory">Category</label>
+              <select id="filterCategory" class="form-select" onchange="onCategoryChanged()">
+                <option value="all" selected>All Categories</option>
+                <option value="residential">🏠 Residential</option>
+                <option value="land_plots">🌳 Land & Plots</option>
+                <option value="commercial">🏢 Commercial</option>
+                <option value="pg_rooms">🛏️ PG & Rooms</option>
+                <option value="new_projects">🏗️ New Projects</option>
+              </select>
+            </div>
+
+            <!-- Dynamic Subcategory -->
+            <div class="filter-section-group" id="subcategoryGroup">
+              <label class="filter-header-label" for="filterSubcategory">Subcategory</label>
+              <select id="filterSubcategory" class="form-select">
+                <option value="all">All Subcategories</option>
+              </select>
+            </div>
+
+            <!-- Bedrooms (BHK) - Dynamic per category -->
+            <div class="filter-section-group" id="bhkFilterGroup">
+              <label class="filter-header-label">Bedrooms (BHK)</label>
+              <div style="display: flex; gap: 0.35rem;">
+                <button type="button" class="btn btn-secondary btn-sm bhk-pill active" onclick="setFilterBHK('all', this)">Any</button>
+                <button type="button" class="btn btn-secondary btn-sm bhk-pill" onclick="setFilterBHK('1', this)">1</button>
+                <button type="button" class="btn btn-secondary btn-sm bhk-pill" onclick="setFilterBHK('2', this)">2</button>
+                <button type="button" class="btn btn-secondary btn-sm bhk-pill" onclick="setFilterBHK('3', this)">3</button>
+                <button type="button" class="btn btn-secondary btn-sm bhk-pill" onclick="setFilterBHK('4', this)">4+</button>
+              </div>
+            </div>
+
+            <!-- Price Slider -->
+            <div class="filter-section-group">
+              <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                <label class="filter-header-label" style="margin-bottom: 0;">Max Budget</label>
+                <span id="priceSliderVal" class="text-brand font-bold" style="font-size: 0.8125rem;">Any Budget</span>
+              </div>
+              <input type="range" id="filterPriceRange" min="10000" max="30000000" step="50000" value="30000000" oninput="updatePriceSlider(this.value)">
+            </div>
+
+            <!-- Furnishing -->
+            <div class="filter-section-group">
+              <label class="filter-header-label" for="filterFurnishing">Furnishing</label>
+              <select id="filterFurnishing" class="form-select">
+                <option value="all" selected>Any Status</option>
+                <option value="fully-furnished">Fully Furnished</option>
+                <option value="semi-furnished">Semi-Furnished</option>
+                <option value="unfurnished">Unfurnished</option>
+              </select>
+            </div>
+
+            <!-- Verified Only Toggle -->
+            <div class="filter-section-group" style="padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+              <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.875rem; font-weight: 600; color: var(--text-primary);">
+                <input type="checkbox" id="filterVerifiedOnly" style="width: auto !important; accent-color: var(--brand-primary);">
+                <span>🛡️ Verified Properties Only</span>
+              </label>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+              <i class="fas fa-filter"></i> Apply Filters
+            </button>
+          </form>
+        </aside>
+
+        <!-- Right Side Properties Results -->
+        <div>
+          <!-- Results Header & Controls -->
+          <div class="properties-results-header">
+            <div style="font-size: 0.9375rem; color: var(--text-secondary); font-weight: 600;" id="resultsCountLabel">
+              Loading properties...
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 1rem;">
+              <!-- Sort Dropdown -->
+              <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <label for="sortBySelect" style="font-size: 0.8125rem; font-weight: 600; color: var(--text-muted); white-space: nowrap;">Sort by:</label>
+                <select id="sortBySelect" class="form-select" onchange="applySorting(this.value)" style="width: auto; padding: 0.4rem 0.85rem; font-size: 0.8125rem;">
+                  <option value="recommended" selected>Recommended</option>
+                  <option value="best_match">Best Match</option>
+                  <option value="trust_score">Highest Trust Score</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                  <option value="newest">Newest Listed</option>
+                </select>
+              </div>
+
+              <!-- Grid / List Switcher -->
+              <div class="view-mode-toggle">
+                <button type="button" class="view-btn active" id="btnGridView" onclick="setViewMode('grid')" title="Grid View">
+                  <i class="fas fa-th-large"></i>
+                </button>
+                <button type="button" class="view-btn" id="btnListView" onclick="setViewMode('list')" title="List View">
+                  <i class="fas fa-list"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Cards Grid Container -->
+          <div class="properties-cards-container grid-view" id="propertiesCardsContainer">
+            <div style="grid-column: 1 / -1; text-align: center; padding: 4rem;">
+              <i class="fas fa-spinner fa-spin text-brand" style="font-size: 2rem;"></i>
+              <p class="text-muted" style="margin-top: 1rem;">Loading verified listings...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav">
+    <a href="/index.html" class="mobile-nav-item"><i class="fas fa-home"></i><span>Home</span></a>
+    <a href="/properties.html" class="mobile-nav-item active"><i class="fas fa-search"></i><span>Search</span></a>
+    <a href="/saved.html" class="mobile-nav-item"><i class="fas fa-heart"></i><span>Saved</span></a>
+    <a href="/advisor.html" class="mobile-nav-item"><i class="fas fa-robot"></i><span>AI</span></a>
+    <a href="/dashboard.html" class="mobile-nav-item"><i class="fas fa-user"></i><span>Profile</span></a>
+  </nav>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/properties.js"></script>
+</body>
+</html>

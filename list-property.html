@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>List Your Property | HomeSphere AI Platform</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/list-property.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Wizard Content -->
+  <main class="main-content">
+    <div class="container">
+      <div class="wizard-wrapper">
+
+        <div style="text-align: center; margin-bottom: 2.5rem;">
+          <span class="badge badge-trust" style="margin-bottom: 0.75rem;">SELLER & AGENT PORTAL</span>
+          <h1>Publish Listing with <span class="gradient-text">AI Verification</span></h1>
+          <p class="text-secondary">Provide property data and documents to automatically generate your Trust Score & DNA.</p>
+        </div>
+
+        <!-- Wizard Progress Bar -->
+        <div class="wizard-steps">
+          <div class="wizard-step active" id="stepIndicator1">
+            <div class="step-number">1</div>
+            <div class="step-label">Basic Info</div>
+          </div>
+          <div class="wizard-step" id="stepIndicator2">
+            <div class="step-number">2</div>
+            <div class="step-label">Pricing & Specs</div>
+          </div>
+          <div class="wizard-step" id="stepIndicator3">
+            <div class="step-number">3</div>
+            <div class="step-label">DNA & Amenities</div>
+          </div>
+          <div class="wizard-step" id="stepIndicator4">
+            <div class="step-number">4</div>
+            <div class="step-label">Review & Publish</div>
+          </div>
+        </div>
+
+        <!-- Wizard Form Card -->
+        <div class="wizard-card glass-card">
+          <form id="listPropertyForm">
+
+            <!-- Step 1: General Details -->
+            <div class="step-panel active" id="stepPanel1">
+              <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-info-circle text-cyan"></i> Step 1: General Details</h3>
+
+              <div class="form-group">
+                <label class="form-label" for="propTitle">Property Listing Title *</label>
+                <input type="text" id="propTitle" class="form-input" placeholder="e.g. Modern Glass Penthouse with Skyline Terrace" required>
+              </div>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label">Intent Type *</label>
+                  <div style="display:flex;gap:1.5rem;padding-top:0.4rem;">
+                    <label class="custom-checkbox">
+                      <input type="radio" name="type" value="buy" checked> For Sale
+                    </label>
+                    <label class="custom-checkbox">
+                      <input type="radio" name="type" value="rent"> For Rent
+                    </label>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="propCategory">Property Category *</label>
+                  <select id="propCategory" class="form-select">
+                    <option value="apartment">Apartment</option>
+                    <option value="villa">Luxury Villa</option>
+                    <option value="penthouse">Penthouse</option>
+                    <option value="townhouse">Townhouse</option>
+                    <option value="studio">Studio</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="propAddress">Street Address *</label>
+                <input type="text" id="propAddress" class="form-input" placeholder="e.g. 742 Skyview Boulevard, Suite PH-B" required>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="propCity">City *</label>
+                  <input type="text" id="propCity" class="form-input" placeholder="e.g. Austin" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="propState">State / Region *</label>
+                  <input type="text" id="propState" class="form-input" placeholder="e.g. TX" required>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="propZip">Zip / Postal Code</label>
+                  <input type="text" id="propZip" class="form-input" placeholder="78701">
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="propDescription">Detailed Description</label>
+                <textarea id="propDescription" class="form-textarea" rows="4" placeholder="Highlight unique architectural features, renovation history, smart appliances, view corridors..."></textarea>
+              </div>
+            </div>
+
+            <!-- Step 2: Pricing & Specifications -->
+            <div class="step-panel" id="stepPanel2">
+              <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-dollar-sign text-emerald"></i> Step 2: Pricing & Specifications</h3>
+
+              <div class="form-grid-2">
+                <div class="form-group">
+                  <label class="form-label" for="propPrice" id="priceLabel">Listing Sale Price ($) *</label>
+                  <input type="number" id="propPrice" class="form-input" placeholder="e.g. 850000" min="100" required>
+                </div>
+
+                <div class="form-group" id="depositGroup" style="display: none;">
+                  <label class="form-label" for="propDeposit">Security Deposit ($)</label>
+                  <input type="number" id="propDeposit" class="form-input" placeholder="e.g. 5000" min="0">
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="propBeds">Bedrooms</label>
+                  <input type="number" id="propBeds" class="form-input" value="3" min="1">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="propBaths">Bathrooms</label>
+                  <input type="number" id="propBaths" class="form-input" value="2.5" step="0.5" min="1">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="propArea">Area (Square Feet) *</label>
+                  <input type="number" id="propArea" class="form-input" placeholder="e.g. 2400" min="100" required>
+                </div>
+              </div>
+
+              <div class="form-grid-3">
+                <div class="form-group">
+                  <label class="form-label" for="propYearBuilt">Year Built</label>
+                  <input type="number" id="propYearBuilt" class="form-input" value="2022">
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="propFurnishing">Furnishing</label>
+                  <select id="propFurnishing" class="form-select">
+                    <option value="fully-furnished">Fully Furnished</option>
+                    <option value="semi-furnished">Semi-Furnished</option>
+                    <option value="unfurnished">Unfurnished</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="propParking">Parking Spaces</label>
+                  <input type="number" id="propParking" class="form-input" value="2" min="0">
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 3: DNA & Features -->
+            <div class="step-panel" id="stepPanel3">
+              <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-dna text-purple"></i> Step 3: Property DNA & Amenities</h3>
+
+              <div class="form-group">
+                <label class="form-label" for="propLegalStatus">Legal Title & Registration Status</label>
+                <input type="text" id="propLegalStatus" class="form-input" value="100% Clear Freehold Verified" placeholder="e.g. Freehold Clear Title">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" for="propStructuralNotes">Structural & Envelope Integrity Notes</label>
+                <input type="text" id="propStructuralNotes" class="form-input" value="Seismic Grade 4 post-tension concrete and insulated glazing" placeholder="Structural specifications...">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label" style="margin-bottom: 0.75rem;">Select Property Amenities</label>
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;">
+                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Solar Panels" checked> Solar Panels</label>
+                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="EV Charging Station" checked> EV Charging Station</label>
+                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Smart Home Automation" checked> Smart Home Automation</label>
+                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Private Pool"> Private Pool</label>
+                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="24/7 Security" checked> 24/7 Security</label>
+                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Rooftop Terrace"> Rooftop Terrace</label>
+                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Central Air Conditioning" checked> Central AC</label>
+                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Private Elevator"> Private Elevator</label>
+                </div>
+              </div>
+
+              <div class="form-group" style="margin-top:1.5rem;">
+                <label class="form-label" for="propImageUrl">Primary Cover Image URL</label>
+                <input type="url" id="propImageUrl" class="form-input" placeholder="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80">
+                <span class="text-muted" style="font-size:0.78rem;">Leave blank to use default premium architecture image.</span>
+              </div>
+            </div>
+
+            <!-- Step 4: Review & Publish -->
+            <div class="step-panel" id="stepPanel4">
+              <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-check-circle text-cyan"></i> Step 4: Review Listing Summary</h3>
+
+              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+                  <h4 id="reviewTitle" style="font-size:1.25rem;color:#fff;">Listing Title</h4>
+                  <div id="reviewPrice" style="font-size:1.5rem;font-weight:800;color:var(--accent-cyan);">$0</div>
+                </div>
+                <div id="reviewLocation" class="text-secondary" style="font-size:0.95rem;margin-bottom:0.5rem;">Location</div>
+                <div id="reviewSpecs" class="text-light" style="font-size:0.9rem;">Specs</div>
+              </div>
+
+              <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:var(--radius-md);padding:1.25rem;font-size:0.9rem;color:var(--text-light);line-height:1.6;">
+                <i class="fas fa-sparkles text-cyan"></i> <strong>Automated AI Processing Notice:</strong><br>
+                Publishing will trigger the HomeSphere AI Engine to compute an initial **Trust Score**, generate structured **Property DNA**, calculate **Hidden Closing Costs**, and synthesize **Future Capital Value Predictions**.
+              </div>
+            </div>
+
+            <!-- Wizard Navigation Buttons -->
+            <div class="wizard-actions">
+              <button type="button" class="btn btn-secondary" id="prevStepBtn" style="display:none;">
+                <i class="fas fa-arrow-left"></i> Previous
+              </button>
+              <button type="button" class="btn btn-primary" id="nextStepBtn">
+                Next Step <i class="fas fa-arrow-right"></i>
+              </button>
+              <button type="submit" class="btn btn-emerald" id="submitPropertyBtn" style="display:none;">
+                <i class="fas fa-check"></i> Publish Listing & Generate AI DNA
+              </button>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>&copy; 2026 HomeSphere AI Platform.</p>
+        <div style="display:flex;gap:1.5rem;">
+          <a href="/properties.html" class="text-muted">Discover</a>
+          <a href="/dashboard.html" class="text-muted">Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/list-property.js"></script>
+</body>
+</html>

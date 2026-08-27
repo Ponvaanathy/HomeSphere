@@ -1,0 +1,95 @@
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const dotenv = require('dotenv');
+
+dotenv.config();
+
+const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
+const propertyRoutes = require('./routes/propertyRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const compareRoutes = require('./routes/compareRoutes');
+const savedRoutes = require('./routes/savedRoutes');
+const contactRoutes = require('./routes/contactRoutes');
+const adminRoutes = require('./routes/adminRoutes');
+const aiRoutes = require('./routes/aiRoutes');
+const transactionRoutes = require('./routes/transactionRoutes');
+const rentalApplicationRoutes = require('./routes/rentalApplicationRoutes');
+const messageRoutes = require('./routes/messageRoutes');
+const { notFoundHandler, errorHandler } = require('./middleware/errorMiddleware');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Enable CORS for all origins
+app.use(cors());
+
+// Body Parsers
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Static Assets Serving
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+app.use('/images', express.static(path.join(__dirname, '../images')));
+app.use('/documents', express.static(path.join(__dirname, '../documents')));
+app.use('/css', express.static(path.join(__dirname, '../css')));
+app.use('/js', express.static(path.join(__dirname, '../js')));
+app.use('/admin', express.static(path.join(__dirname, '../admin')));
+
+// Serve root static frontend pages
+app.use(express.static(path.join(__dirname, '../')));
+
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({
+    success: true,
+    status: 'online',
+    app: 'HomeSphere AI Decision Platform',
+    version: '1.0.0',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// Mount API Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
+app.use('/api/properties', propertyRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/compare', compareRoutes);
+app.use('/api/saved', savedRoutes);
+app.use('/api/contact', contactRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/rental-applications', rentalApplicationRoutes);
+app.use('/api/messages', messageRoutes);
+
+// API 404 for unmatched /api routes
+app.use('/api/*', notFoundHandler);
+
+// Fallback to index.html for SPA-style direct navigation if needed
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  // Try sending the requested file or fallback to index.html
+  const requestedPath = path.join(__dirname, '../', req.path);
+  res.sendFile(requestedPath, (err) => {
+    if (err) {
+      res.sendFile(path.join(__dirname, '../index.html'));
+    }
+  });
+});
+
+// Centralized Error Handler
+app.use(errorHandler);
+
+// Start HTTP Server
+app.listen(PORT, () => {
+  console.log(`====================================================`);
+  console.log(`🚀 HomeSphere AI Decision Platform Backend Running`);
+  console.log(`🌐 Server URL: http://localhost:${PORT}`);
+  console.log(`📊 API Health: http://localhost:${PORT}/api/health`);
+  console.log(`====================================================`);
+});

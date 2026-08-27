@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact & Inquiries | HomeSphere</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/contact.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="gradient-text">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link">Discover</a>
+        <a href="/transactions.html" class="nav-link">Transactions</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/advisor.html" class="nav-link">AI Advisor</a>
+        <a href="/contact.html" class="nav-link active">Contact</a>
+      </div>
+
+      <div class="nav-actions">
+        <a href="/login.html" class="btn btn-secondary btn-sm">Sign In</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container">
+
+      <div style="text-align: center; margin-bottom: 3.5rem;">
+        <span class="badge badge-trust" style="margin-bottom: 0.75rem;">GET IN TOUCH</span>
+        <h1>We Are Here to <span class="gradient-text">Assist You</span></h1>
+        <p class="text-secondary" style="max-width: 600px; margin: 0.5rem auto 0;">
+          Have questions about property verification, title audits, or partner listings? Reach out to our advisory team.
+        </p>
+      </div>
+
+      <div class="contact-layout">
+
+        <!-- Left Column: Support Info & FAQ -->
+        <div>
+          <div class="glass-card contact-card">
+            <h3>Contact Information</h3>
+            <p class="text-secondary" style="font-size:0.92rem;margin-top:0.25rem;">Direct communication channels with the HomeSphere operations team.</p>
+
+            <div class="contact-info-list">
+              <div class="contact-info-item">
+                <div class="contact-icon-box"><i class="fas fa-envelope"></i></div>
+                <div>
+                  <div class="text-muted" style="font-size:0.8rem;text-transform:uppercase;font-weight:700;">Email Inquiries</div>
+                  <strong style="color:var(--text-primary);font-size:1rem;">support@homesphere.com</strong>
+                </div>
+              </div>
+
+              <div class="contact-info-item">
+                <div class="contact-icon-box"><i class="fas fa-phone-alt"></i></div>
+                <div>
+                  <div class="text-muted" style="font-size:0.8rem;text-transform:uppercase;font-weight:700;">Support Hotline</div>
+                  <strong style="color:var(--text-primary);font-size:1rem;">+91 (800) 555-7437</strong>
+                </div>
+              </div>
+
+              <div class="contact-info-item">
+                <div class="contact-icon-box"><i class="fas fa-map-pin"></i></div>
+                <div>
+                  <div class="text-muted" style="font-size:0.8rem;text-transform:uppercase;font-weight:700;">Operations Center</div>
+                  <strong style="color:var(--text-primary);font-size:1rem;">Avinashi Road, Peelamedu, Coimbatore, TN</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- FAQ Accordion -->
+          <div class="faq-accordion">
+            <h3 style="margin-bottom: 0.5rem;">Frequently Asked Questions</h3>
+
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>How is the AI Trust Score computed?</span>
+                <i class="fas fa-chevron-down"></i>
+              </div>
+              <div class="faq-answer">
+                Our Trust Engine evaluates uploaded freehold title deeds, municipal encumbrance filings, seller historical reputation, and price-to-market sanity deviations to compute a transparent 0–100 rating.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>What is Property DNA?</span>
+                <i class="fas fa-chevron-down"></i>
+              </div>
+              <div class="faq-answer">
+                Property DNA is a structured digital fingerprint recording the exact structural age, engineering certifications, historical ownership chains, and architectural warranty milestones for complete transparency.
+              </div>
+            </div>
+
+            <div class="faq-item">
+              <div class="faq-question">
+                <span>Are hidden closing costs accurate?</span>
+                <i class="fas fa-chevron-down"></i>
+              </div>
+              <div class="faq-answer">
+                Yes, our engine applies jurisdictional statutory tax rates, stamp duty formulas, average HOA reserves, and mandatory registration fees to give you a true first-year budget expectation.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Contact Form -->
+        <div class="glass-card contact-card">
+          <h3 style="margin-bottom: 0.5rem;">Send a Message</h3>
+          <p class="text-secondary" style="font-size:0.9rem;margin-bottom:1.5rem;">Fill out this form and our customer intelligence team will respond within 24 hours.</p>
+
+          <form id="contactForm">
+            <div class="form-group">
+              <label class="form-label" for="contactName">Full Name *</label>
+              <input type="text" id="contactName" class="form-input" placeholder="Your name" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="contactEmail">Email Address *</label>
+              <input type="email" id="contactEmail" class="form-input" placeholder="name@example.com" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="contactPhone">Phone Number</label>
+              <input type="tel" id="contactPhone" class="form-input" placeholder="+1 (555) 000-0000">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="contactMessage">Your Message *</label>
+              <textarea id="contactMessage" class="form-textarea" rows="4" placeholder="How can we assist your property decision?" required></textarea>
+            </div>
+
+            <button type="submit" id="contactSubmitBtn" class="btn btn-primary" style="width:100%;margin-top:0.75rem;">
+              Send Message
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>&copy; 2026 HomeSphere AI Platform.</p>
+        <div style="display:flex;gap:1.5rem;">
+          <a href="/properties.html" class="text-muted">Discover</a>
+          <a href="/advisor.html" class="text-muted">AI Advisor</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/contact.js"></script>
+</body>
+</html>

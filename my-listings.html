@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Listings Management | HomeSphere</title>
+  <meta name="description" content="Manage your property listings, track buyer enquiries, view engagement metrics, and post new inventory.">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <style>
+    .listings-table-container {
+      background-color: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-sm);
+      overflow-x: auto;
+      margin-bottom: 2rem;
+    }
+    .listings-management-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 800px;
+    }
+    .listings-management-table th, .listings-management-table td {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--border-color);
+      text-align: left;
+      font-size: 0.9rem;
+    }
+    .listings-management-table th {
+      background-color: var(--bg-surface-alt);
+      font-size: 0.8125rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+    .portfolio-tabs-nav {
+      display: flex;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 1rem;
+      margin-bottom: 1.5rem;
+    }
+    .portfolio-tab-btn {
+      padding: 0.5rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+      border: 1px solid var(--border-color);
+      background-color: var(--bg-surface);
+      color: var(--text-secondary);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+    .portfolio-tab-btn.active {
+      background-color: var(--brand-primary);
+      color: #ffffff;
+      border-color: var(--brand-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/list-property.html" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Post Property</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Header -->
+      <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+          <div class="section-eyebrow"><i class="fas fa-building text-emerald"></i> Owner & Agent Portfolio</div>
+          <h1 style="font-size: 2rem; color: var(--text-primary); margin-top: 0.25rem;">My Property Listings</h1>
+          <p class="text-secondary">Track performance, manage buyer enquiries, and update photos for your properties.</p>
+        </div>
+
+        <a href="/list-property.html" class="btn btn-emerald btn-lg">
+          <i class="fas fa-plus-circle"></i> Add New Property
+        </a>
+      </div>
+
+      <!-- Dashboard Statistics (Total Listings, Active, Views, Enquiries) -->
+      <div class="summary-cards-grid">
+        <div class="summary-metric-card">
+          <div class="summary-icon-box blue"><i class="fas fa-list-ul"></i></div>
+          <div>
+            <div class="summary-metric-num" id="portfolioTotalListings">0</div>
+            <div class="summary-metric-label">Total Listings</div>
+          </div>
+        </div>
+
+        <div class="summary-metric-card">
+          <div class="summary-icon-box emerald" style="background-color: var(--accent-emerald-light); color: var(--accent-emerald);"><i class="fas fa-check-circle"></i></div>
+          <div>
+            <div class="summary-metric-num" id="portfolioActiveListings">0</div>
+            <div class="summary-metric-label">Active Listings</div>
+          </div>
+        </div>
+
+        <div class="summary-metric-card">
+          <div class="summary-icon-box purple"><i class="fas fa-eye"></i></div>
+          <div>
+            <div class="summary-metric-num" id="portfolioViews">0</div>
+            <div class="summary-metric-label">Total Views</div>
+          </div>
+        </div>
+
+        <div class="summary-metric-card">
+          <div class="summary-icon-box amber"><i class="fas fa-comments"></i></div>
+          <div>
+            <div class="summary-metric-num" id="portfolioEnquiries">0</div>
+            <div class="summary-metric-label">Enquiries Received</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Portfolio Tabs -->
+      <div class="portfolio-tabs-nav">
+        <button type="button" class="portfolio-tab-btn active" onclick="switchListingsTab('active', this)">Active Listings</button>
+        <button type="button" class="portfolio-tab-btn" onclick="switchListingsTab('pending', this)">Pending Verification</button>
+        <button type="button" class="portfolio-tab-btn" onclick="switchListingsTab('sold', this)">Sold / Rented</button>
+      </div>
+
+      <!-- Listings Table -->
+      <div class="listings-table-container">
+        <table class="listings-management-table">
+          <thead>
+            <tr>
+              <th>Property</th>
+              <th>Category</th>
+              <th>Price & Purpose</th>
+              <th>Trust Score</th>
+              <th>Status</th>
+              <th>Engagement</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="myListingsTableBody">
+            <tr>
+              <td colspan="7" style="text-align: center; padding: 3rem;">
+                <i class="fas fa-spinner fa-spin text-brand" style="font-size: 1.5rem;"></i>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </main>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/my-listings.js"></script>
+</body>
+</html>

@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Saved Properties | HomeSphere</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
+  <link rel="stylesheet" href="/css/properties.css">
+  <link rel="stylesheet" href="/css/saved.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="container">
+      <a href="/index.html" class="nav-brand" id="brandLogoLink">
+        <div class="brand-icon"><i class="fas fa-cube"></i></div>
+        <span>Home<span class="text-brand">Sphere</span></span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/index.html" class="nav-link">Home</a>
+        <a href="/properties.html" class="nav-link">Properties</a>
+        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
+        <a href="/compare.html" class="nav-link">Compare</a>
+        <a href="/dashboard.html" class="nav-link">Dashboard</a>
+      </div>
+
+      <div class="nav-actions" id="navAuthActions">
+        <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="container">
+
+      <!-- Breadcrumbs -->
+      <div style="font-size: 0.8125rem; color: var(--text-muted); margin-bottom: 1.25rem;">
+        <a href="/dashboard.html" class="text-brand">Dashboard</a> &nbsp;/&nbsp; 
+        <span class="text-primary" style="font-weight: 600;">Saved Properties</span>
+      </div>
+
+      <!-- Page Header -->
+      <div class="saved-header-container">
+        <div class="saved-header-title-group">
+          <div class="section-eyebrow"><i class="fas fa-heart text-rose"></i> Personal Watchlist</div>
+          <h1 class="saved-page-title">Saved Properties</h1>
+          <p class="saved-page-subtitle">Properties you've saved for later.</p>
+          <div class="saved-count-pill" id="savedCountSummary">
+            <i class="fas fa-bookmark text-brand"></i> <span id="savedSummaryText">Loading saved properties...</span>
+          </div>
+        </div>
+
+        <div class="saved-header-actions">
+          <a href="/properties.html" class="btn btn-primary">
+            <i class="fas fa-compass"></i> Explore Properties
+          </a>
+        </div>
+      </div>
+
+      <!-- Search, Filter & Sort Toolbar -->
+      <div class="saved-toolbar-card">
+        <!-- Search Input -->
+        <div class="saved-search-wrapper">
+          <i class="fas fa-search saved-search-icon"></i>
+          <input 
+            type="text" 
+            id="savedSearchInput" 
+            class="saved-search-input" 
+            placeholder="Search your saved properties by title, location, or type..." 
+            autocomplete="off"
+          >
+          <button id="clearSearchBtn" class="saved-clear-search-btn" style="display: none;" title="Clear search">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Filter Chips & Sort Controls -->
+        <div class="saved-filter-row">
+          <!-- Type Filter Tabs -->
+          <div class="saved-filter-chips" id="typeFilterChips">
+            <button class="saved-chip active" data-type="all">All</button>
+            <button class="saved-chip" data-type="sale">For Sale</button>
+            <button class="saved-chip" data-type="rent">For Rent</button>
+            <button class="saved-chip" data-type="lease">For Lease</button>
+          </div>
+
+          <!-- Sort Dropdown -->
+          <div class="saved-sort-wrapper">
+            <label for="savedSortSelect" class="saved-sort-label"><i class="fas fa-sort-amount-down"></i> Sort:</label>
+            <select id="savedSortSelect" class="saved-sort-select">
+              <option value="recent">Recently Saved</option>
+              <option value="price_asc">Price: Low to High</option>
+              <option value="price_desc">Price: High to Low</option>
+              <option value="newest">Newest Listings</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved Properties Grid (3 cols desktop, 2 cols tablet, 1 col mobile) -->
+      <div class="saved-properties-grid" id="savedPropertiesGrid">
+        <!-- Loading Skeleton Cards will appear here initially -->
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>&copy; 2026 HomeSphere AI Platform. All rights reserved.</p>
+        <div style="display:flex;gap:1.5rem;">
+          <a href="/properties.html" class="text-muted">Explore Properties</a>
+          <a href="/advisor.html" class="text-muted">AI Advisor</a>
+          <a href="/dashboard.html" class="text-muted">Dashboard</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div id="toast-container"></div>
+
+  <script src="/js/saved.js"></script>
+</body>
+</html>
+

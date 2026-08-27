@@ -1,0 +1,46 @@
+/* Transactions Deal Room Clean SaaS Styles */
+.transactions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.deal-room-card {
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.deal-stage-progress {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
+  margin: 1.5rem 0;
+}
+
+.stage-step-item {
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+  background-color: var(--bg-surface-alt);
+  border-radius: var(--radius-xs);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.stage-step-item.completed {
+  background-color: var(--accent-emerald-light);
+  color: var(--accent-emerald);
+}
+
+.stage-step-item.current {
+  background-color: var(--brand-primary-light);
+  color: var(--brand-primary);
+  border: 1px solid var(--brand-primary-border);
+}

@@ -1,0 +1,230 @@
+/* ==========================================================
+   HOMESPHERE PROPERTY DETAILS - SAAS DECISION SUITE STYLES
+   ========================================================== */
+
+.details-page-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.details-main-pane {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+/* Gallery */
+.property-gallery-container {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+}
+
+.gallery-primary-image {
+  width: 100%;
+  height: 400px;
+  object-fit: cover;
+}
+
+.gallery-thumbnails-row {
+  display: flex;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background-color: var(--bg-surface-alt);
+  overflow-x: auto;
+}
+
+.thumb-image-btn {
+  width: 72px;
+  height: 52px;
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  border: 2px solid transparent;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.thumb-image-btn.active {
+  border-color: var(--brand-primary);
+}
+
+.thumb-image-btn img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Specs Ribbon */
+.specs-ribbon-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 1rem;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.spec-ribbon-item {
+  display: flex;
+  flex-direction: column;
+}
+
+.spec-ribbon-item .label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.spec-ribbon-item .val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-top: 0.15rem;
+}
+
+/* Trust Score Component */
+.trust-score-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.trust-meter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+}
+
+.trust-score-pill-large {
+  font-size: 2.25rem;
+  font-weight: 800;
+  color: var(--accent-emerald);
+  font-family: var(--font-heading);
+  line-height: 1;
+}
+
+.trust-factor-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.875rem;
+}
+.trust-factor-row:last-child {
+  border-bottom: none;
+}
+
+/* Hidden Cost Table */
+.hidden-cost-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.hidden-cost-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+}
+
+.hidden-cost-table th, .hidden-cost-table td {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+
+.hidden-cost-table td:last-child {
+  text-align: right;
+  font-weight: 600;
+}
+
+.hidden-cost-table tr.total-row td {
+  border-top: 2px solid var(--border-color);
+  border-bottom: none;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent-emerald);
+  padding-top: 1rem;
+}
+
+/* Locality LifeScore */
+.lifescore-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.lifescore-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.lifescore-box {
+  background-color: var(--bg-surface-alt);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  text-align: center;
+}
+
+.lifescore-box .score {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--brand-primary);
+  margin-bottom: 0.15rem;
+}
+
+.lifescore-box .label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+/* AI Property Insight */
+.ai-insight-card {
+  background-color: var(--accent-purple-light);
+  border: 1px solid var(--accent-purple-border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+}
+
+/* Sticky Contact Sidebar */
+.details-contact-sidebar {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.75rem;
+  box-shadow: var(--shadow-md);
+  position: sticky;
+  top: calc(var(--header-height) + 1.5rem);
+}
+
+@media (max-width: 992px) {
+  .details-page-layout { grid-template-columns: 1fr; }
+  .details-contact-sidebar { position: static; }
+  .lifescore-grid { grid-template-columns: repeat(2, 1fr); }
+  .radar-split-grid { grid-template-columns: 1fr !important; justify-items: center; }
+  .forecast-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+
+@media (max-width: 576px) {
+  .radar-factors-grid { grid-template-columns: 1fr !important; }
+  .forecast-stats-grid { grid-template-columns: 1fr !important; }
+}
+
