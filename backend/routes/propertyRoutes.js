@@ -9,7 +9,12 @@ router.get('/', propertyController.getProperties);
 router.get('/nearby', propertyController.getNearbyProperties);
 router.get('/location-intelligence', propertyController.getLocationIntelligence);
 router.get('/categories/stats', propertyController.getCategoryStats);
+
+// Authenticated Owner Listings ("My Listings") - Must be placed BEFORE /:id
+router.get('/my-listings', authMiddleware, propertyController.getMyProperties);
 router.get('/seller/my-listings', authMiddleware, propertyController.getMyProperties);
+router.get('/user/me', authMiddleware, propertyController.getMyProperties);
+
 router.get('/:id/hidden-costs', propertyController.getPropertyHiddenCosts);
 router.get('/:id/analytics', propertyController.getPropertyAnalytics);
 router.get('/:id', propertyController.getPropertyById);

@@ -44,10 +44,19 @@ async function loadMyListings() {
   if (!tbody) return;
 
   try {
-    const res = await fetch('/api/properties/seller/my-listings', {
+    const res = await fetch('/api/properties/my-listings', {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
+
+    if (!res.ok || !data.success) {
+      if (res.status === 401) {
+        showToast('Your session has expired. Please sign in again.', 'error');
+        setTimeout(() => { window.location.href = '/login.html'; }, 1200);
+        return;
+      }
+      throw new Error(data.message || 'Failed to load property listings.');
+    }
 
     if (data.success && data.data) {
       myListingsData = data.data.properties || [];
@@ -82,11 +91,14 @@ async function loadMyListings() {
       renderListingsTable(myListingsData);
     }
   } catch (err) {
-    console.error('Error fetching my listings', err);
+    console.error('Error fetching my listings:', err);
     tbody.innerHTML = `
       <tr>
         <td colspan="7" style="text-align: center; padding: 3rem;">
-          <p class="text-muted">No listings available yet.</p>
+          <div style="color: var(--accent-rose); margin-bottom: 0.5rem;"><i class="fas fa-exclamation-circle" style="font-size: 1.5rem;"></i></div>
+          <p style="color: var(--text-primary); font-weight: 600;">Unable to load your listings.</p>
+          <p class="text-muted" style="font-size: 0.85rem; margin-bottom: 1rem;">${err.message || 'Server connection error'}</p>
+          <button type="button" onclick="loadMyListings()" class="btn btn-secondary btn-sm"><i class="fas fa-redo"></i> Try Again</button>
         </td>
       </tr>
     `;

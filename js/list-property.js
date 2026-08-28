@@ -87,6 +87,9 @@ function checkAuthAndSyncNav() {
     return;
   }
 
+  const brandLogoLink = document.getElementById('brandLogoLink') || document.querySelector('.nav-brand');
+  const authActions = document.getElementById('navAuthActions');
+
   if (brandLogoLink) brandLogoLink.href = '/dashboard.html';
   if (authActions) {
     let userName = 'Profile';
@@ -831,6 +834,7 @@ async function submitPropertyListing() {
 
   const year_built = document.getElementById('propYearBuilt')?.value || '2023';
   const furnishing = document.getElementById('propFurnishing')?.value || 'unfurnished';
+  const parking_spaces = document.getElementById('propParking')?.value || '1';
   const legal_status = document.getElementById('propLegalStatus')?.value || '100% Clear Freehold Title Verified';
 
   // Optional Cost Overrides

@@ -13,8 +13,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Leaflet Map Library -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
   <!-- HomeSphere Global Design System Styles -->
   <link rel="stylesheet" href="/css/style.css">
@@ -811,6 +811,9 @@
           <div class="success-actions-row">
             <a href="#" class="btn btn-primary" id="successBtnViewDetails">
               <i class="fas fa-external-link-alt"></i> View Property Details
+            </a>
+            <a href="/my-listings.html" class="btn btn-emerald" style="background-color: var(--accent-emerald); border-color: var(--accent-emerald); color: #ffffff;">
+              <i class="fas fa-list-ul"></i> View My Listings
             </a>
             <a href="/map-search.html" class="btn btn-secondary">
               <i class="fas fa-map-marked-alt text-brand"></i> View on Live Map

@@ -1531,35 +1531,6 @@ const uploadDocument = async (req, res, next) => {
   }
 };
 
-// GET /api/properties/seller/my-listings
-const getMyProperties = async (req, res, next) => {
-  try {
-    const ownerId = req.user.id;
-
-    const [properties] = await pool.query(
-      `SELECT p.*,
-              COALESCE(ts.score, 75) as trust_score,
-              (SELECT COUNT(*) FROM property_images WHERE property_id = p.id) as image_count,
-              (SELECT COUNT(*) FROM virtual_tour_images WHERE property_id = p.id) as tour_count,
-              (SELECT COUNT(*) FROM property_documents WHERE property_id = p.id) as doc_count,
-              (SELECT COUNT(*) FROM contacts WHERE property_id = p.id) as inquiry_count,
-              (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
-       FROM properties p
-       LEFT JOIN trust_scores ts ON p.id = ts.property_id
-       WHERE p.owner_id = ?
-       ORDER BY p.created_at DESC`,
-      [ownerId]
-    );
-
-    res.json({
-      success: true,
-      data: properties
-    });
-  } catch (err) {
-    next(err);
-  }
-};
-
 // GET /api/properties/:id/analytics
 const getPropertyAnalytics = async (req, res, next) => {
   try {
@@ -2055,6 +2026,68 @@ const getPropertyHiddenCosts = async (req, res, next) => {
   }
 };
 
+// GET /api/properties/my-listings (and /api/properties/seller/my-listings)
+const getMyProperties = async (req, res, next) => {
+  try {
+    const ownerId = req.user?.id;
+    if (!ownerId) {
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required. Invalid or missing user session.'
+      });
+    }
+
+    // Retrieve all properties owned by this authenticated user
+    const [rows] = await pool.query(
+      `SELECT p.*,
+              COALESCE(
+                (SELECT image_url FROM property_images WHERE property_id = p.id AND is_primary = 1 LIMIT 1),
+                (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY id ASC LIMIT 1),
+                'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=600&q=80'
+              ) as primary_image,
+              (SELECT COUNT(*) FROM property_images WHERE property_id = p.id) as image_count,
+              (SELECT COUNT(*) FROM contacts WHERE property_id = p.id) as enquiry_count,
+              ts.score as trust_score,
+              gls.score as green_score
+       FROM properties p
+       LEFT JOIN trust_scores ts ON p.id = ts.property_id
+       LEFT JOIN green_scores gls ON p.id = gls.property_id
+       WHERE p.owner_id = ?
+       ORDER BY p.created_at DESC, p.id DESC`,
+      [ownerId]
+    );
+
+    // Fetch images for each property
+    const propIds = rows.map(r => r.id);
+    let imagesMap = {};
+    if (propIds.length > 0) {
+      const [images] = await pool.query(
+        'SELECT id, property_id, image_url, is_primary, caption FROM property_images WHERE property_id IN (?) ORDER BY is_primary DESC, id ASC',
+        [propIds]
+      );
+      images.forEach(img => {
+        if (!imagesMap[img.property_id]) imagesMap[img.property_id] = [];
+        imagesMap[img.property_id].push(img);
+      });
+    }
+
+    const properties = rows.map(p => ({
+      ...p,
+      images: imagesMap[p.id] || []
+    }));
+
+    res.json({
+      success: true,
+      data: {
+        properties,
+        total: properties.length
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getProperties,
   getNearbyProperties,
@@ -2075,6 +2108,7 @@ module.exports = {
   uploadDocument,
   getMyProperties
 };
+
 
 
 
