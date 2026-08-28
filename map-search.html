@@ -1152,41 +1152,69 @@
         <button type="button" onclick="document.getElementById('mapGeoAlertBanner').style.display='none'" style="background:none;border:none;color:#991b1b;cursor:pointer;"><i class="fas fa-times"></i></button>
       </div>
 
-      <!-- 📍 1. Location Intelligence & Locality LifeScore Radar Panel -->
-      <div class="locality-intel-card" id="locationIntelligencePanel">
-        <div class="intel-header-row">
+      <!-- 📍 1. SELECTED LOCATION PANEL & SYSTEM DETECTED COORDINATES -->
+      <div class="locality-intel-card" id="selectedLocationPanel" style="border-left: 4px solid var(--brand-primary); background: #ffffff;">
+        <div class="intel-header-row" style="margin-bottom: 0.5rem;">
           <div>
-            <div class="section-eyebrow" style="font-size: 0.7rem; margin-bottom: 0.2rem;"><i class="fas fa-microchip text-brand"></i> GPS & Civic Intelligence</div>
-            <div class="intel-location-title" id="intelLocTitle">
-              <i class="fas fa-map-marker-alt text-rose"></i> <span id="intelLocNameText">Peelamedu, Coimbatore</span>
+            <div class="section-eyebrow" style="font-size: 0.7rem; color: var(--brand-primary); font-weight: 800; margin-bottom: 0.2rem; text-transform: uppercase; letter-spacing: 0.04em;">
+              <i class="fas fa-location-dot"></i> SELECTED LOCATION
+            </div>
+            <div class="intel-location-title" id="intelLocTitle" style="font-size: 1.15rem; font-weight: 800; color: var(--text-primary);">
+              <span id="intelLocNameText">Peelamedu, Coimbatore</span>
             </div>
           </div>
           <span class="score-pill green" id="intelLifeScoreBadge" style="font-size: 0.75rem;"><i class="fas fa-star"></i> 9.0/10 LifeScore</span>
         </div>
 
-        <!-- 4-Stat Metric Indicators Grid -->
-        <div class="intel-metrics-grid" id="intelMetricsGrid">
-          <div class="intel-metric-box">
-            <div class="intel-metric-label"><i class="fas fa-building"></i> Properties Nearby</div>
-            <div class="intel-metric-val" id="intelPropCount">0</div>
+        <!-- Coordinates Status & Count Row -->
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.75rem; flex-wrap: wrap;">
+          <span id="detectedCoordsBadge" style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.75rem; background: var(--bg-surface-alt); border: 1px solid var(--border-color); padding: 0.25rem 0.6rem; border-radius: 50px; color: var(--text-secondary); font-family: monospace; font-weight: 600;">
+            <i class="fas fa-crosshairs text-brand"></i> Lat: <span id="detectedLatText">11.0267</span>, Lng: <span id="detectedLngText">77.0028</span>
+          </span>
+          <span id="nearbyCountSummaryBadge" style="font-size: 0.8rem; font-weight: 700; color: var(--brand-primary); background: rgba(37,99,235,0.08); padding: 0.25rem 0.65rem; border-radius: 50px;">
+            <i class="fas fa-building"></i> <span id="nearbyCountNum">0</span> Properties Nearby
+          </span>
+        </div>
+
+        <!-- Secondary Filter Controls: Category, Budget, BHK -->
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.4rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color);">
+          <div>
+            <label style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.15rem;">CATEGORY</label>
+            <select id="filterCategorySelect" class="form-control" style="height: 32px; font-size: 0.78rem; padding: 0 0.5rem; border-radius: 6px;">
+              <option value="all">All Categories</option>
+              <option value="residential">Residential</option>
+              <option value="commercial">Commercial</option>
+              <option value="land_plots">Land / Plot</option>
+              <option value="pg_rooms">PG / Rooms</option>
+              <option value="new_projects">New Projects</option>
+            </select>
           </div>
-          <div class="intel-metric-box">
-            <div class="intel-metric-label"><i class="fas fa-tag"></i> Average Price (Buy)</div>
-            <div class="intel-metric-val" id="intelAvgPrice" style="color: var(--brand-primary);">—</div>
+          <div>
+            <label style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.15rem;">BUDGET</label>
+            <select id="filterBudgetSelect" class="form-control" style="height: 32px; font-size: 0.78rem; padding: 0 0.5rem; border-radius: 6px;">
+              <option value="all">Any Budget</option>
+              <option value="rent_under_20k">Rent &lt; ₹20,000</option>
+              <option value="rent_under_40k">Rent &lt; ₹40,000</option>
+              <option value="buy_under_50l">Buy &lt; ₹50 Lakhs</option>
+              <option value="buy_under_1cr">Buy &lt; ₹1 Crore</option>
+              <option value="buy_above_1cr">Buy &gt; ₹1 Crore</option>
+            </select>
           </div>
-          <div class="intel-metric-box">
-            <div class="intel-metric-label"><i class="fas fa-key"></i> Average Rent</div>
-            <div class="intel-metric-val" id="intelAvgRent" style="color: #059669;">—</div>
-          </div>
-          <div class="intel-metric-box">
-            <div class="intel-metric-label"><i class="fas fa-bus"></i> Transport Access</div>
-            <div class="intel-metric-val" id="intelTransportRating" style="font-size: 0.95rem; color: #2563eb;">Good</div>
+          <div>
+            <label style="font-size: 0.68rem; font-weight: 700; color: var(--text-muted); display: block; margin-bottom: 0.15rem;">BEDROOMS</label>
+            <select id="filterBhkSelect" class="form-control" style="height: 32px; font-size: 0.78rem; padding: 0 0.5rem; border-radius: 6px;">
+              <option value="all">Any BHK</option>
+              <option value="1">1 BHK</option>
+              <option value="2">2 BHK</option>
+              <option value="3">3 BHK</option>
+              <option value="4">4+ BHK</option>
+            </select>
           </div>
         </div>
 
         <!-- Locality LifeScore Radar Integration -->
-        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem; margin-top: 0.5rem;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 0.75rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
             <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-primary);">
               <i class="fas fa-radar text-brand"></i> Locality LifeScore Radar
             </div>
@@ -1197,17 +1225,28 @@
             <canvas id="mapLifeScoreRadarCanvas" width="220" height="220" style="max-width: 100%; height: auto;"></canvas>
           </div>
 
-          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; margin-top: 0.5rem;" id="mapLifeScoreMiniBars">
+          <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.35rem; margin-top: 0.4rem;" id="mapLifeScoreMiniBars">
             <!-- Dynamically populated 6 factors -->
           </div>
         </div>
       </div>
 
-      <!-- 📍 2. Dynamic Location Summary Banner -->
+      <!-- 📍 2. "RECOMMENDED NEAR YOU" SECTION -->
+      <div id="recommendedNearYouSection" style="display: none;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin: 0.5rem 0 0.4rem 0;">
+          <span style="font-size: 0.82rem; font-weight: 800; color: var(--text-primary); text-transform: uppercase; letter-spacing: 0.03em;">
+            <i class="fas fa-sparkles text-amber"></i> RECOMMENDED NEAR YOU
+          </span>
+          <span style="font-size: 0.72rem; color: var(--text-muted);">Proximity &amp; Trust Ranked</span>
+        </div>
+        <div id="recommendedCardsContainer" style="display: flex; flex-direction: column; gap: 0.75rem;"></div>
+      </div>
+
+      <!-- 📍 3. Dynamic Location Summary Banner -->
       <div class="location-summary-card" id="locationSummaryBanner">
         <div class="summary-headline-row">
-          <div style="font-weight: 800; font-size: 0.95rem; color: var(--text-primary);" id="summaryLocText">
-            Peelamedu, Coimbatore
+          <div style="font-weight: 800; font-size: 0.92rem; color: var(--text-primary);" id="summaryLocText">
+            All Nearby Properties
           </div>
           <span class="summary-count-badge" id="summaryCountBadge">0 Properties</span>
         </div>
@@ -1219,7 +1258,7 @@
         </div>
       </div>
 
-      <!-- 📍 3. Properties Cards Container -->
+      <!-- 📍 4. Properties Cards Container -->
       <div id="mapCardsContainer" style="display: flex; flex-direction: column; gap: 0.85rem;">
         <div style="text-align: center; padding: 3.5rem 1.5rem;">
           <i class="fas fa-spinner fa-spin text-brand" style="font-size: 2rem;"></i>
@@ -1228,6 +1267,7 @@
       </div>
 
     </aside>
+
 
     <!-- Right Interactive Map View -->
     <div class="map-canvas-container" id="mapCanvasSection">

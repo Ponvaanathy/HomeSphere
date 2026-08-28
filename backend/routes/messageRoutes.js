@@ -12,5 +12,7 @@ router.get('/thread/:propertyId/:otherUserId', messageController.getThreadMessag
 router.post('/', messageController.sendMessage);
 router.patch('/read-all/:propertyId/:otherUserId', messageController.markThreadRead);
 router.post('/ai-suggest', messageController.getAISuggestedReply);
+router.post('/translate', messageController.translateMessageContent);
 
 module.exports = router;
+

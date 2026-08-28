@@ -4,12 +4,13 @@ const fs = require('fs');
 
 // Ensure persistent upload directories exist
 const uploadsBaseDir = path.join(__dirname, '../../uploads');
-const propertyUploadDir = path.join(uploadsBaseDir, 'properties');
+const propertyUploadDir = path.join(uploadsBaseDir, 'property-images');
+const propertyUploadDirAlt = path.join(uploadsBaseDir, 'properties');
 const virtualTourUploadDir = path.join(uploadsBaseDir, 'virtual_tours');
 const userUploadDir = path.join(uploadsBaseDir, 'users');
 const docUploadDir = path.join(uploadsBaseDir, 'documents');
 
-[uploadsBaseDir, propertyUploadDir, virtualTourUploadDir, userUploadDir, docUploadDir].forEach((dir) => {
+[uploadsBaseDir, propertyUploadDir, propertyUploadDirAlt, virtualTourUploadDir, userUploadDir, docUploadDir].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
@@ -26,6 +27,7 @@ const propertyStorage = multer.diskStorage({
     cb(null, `prop-${uniqueSuffix}${ext}`);
   }
 });
+
 
 // Storage configuration for Virtual Tour Room Images
 const virtualTourStorage = multer.diskStorage({

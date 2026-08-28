@@ -1,9 +1,22 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const dotenv = require('dotenv');
 
-dotenv.config();
+const envPaths = [
+  path.join(__dirname, '.env'),
+  path.join(__dirname, '../.env'),
+  path.join(process.cwd(), '.env'),
+  path.join(process.cwd(), 'backend/.env')
+];
+for (const p of envPaths) {
+  if (fs.existsSync(p)) {
+    dotenv.config({ path: p });
+    break;
+  }
+}
+
 
 const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
@@ -68,28 +81,56 @@ app.use('/api/messages', messageRoutes);
 // API 404 for unmatched /api routes
 app.use('/api/*', notFoundHandler);
 
-// Fallback to index.html for SPA-style direct navigation if needed
+// Clean page routing (supports both /profile and /profile.html)
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next();
   }
-  // Try sending the requested file or fallback to index.html
-  const requestedPath = path.join(__dirname, '../', req.path);
-  res.sendFile(requestedPath, (err) => {
-    if (err) {
-      res.sendFile(path.join(__dirname, '../index.html'));
-    }
-  });
+  const fs = require('fs');
+  const cleanPath = req.path.replace(/\/$/, '');
+  const directPath = path.join(__dirname, '../', cleanPath);
+  const htmlPath = path.join(__dirname, '../', cleanPath + '.html');
+
+  if (cleanPath && fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
+    return res.sendFile(htmlPath);
+  }
+  if (cleanPath && fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
+    return res.sendFile(directPath);
+  }
+  res.sendFile(path.join(__dirname, '../index.html'));
 });
+
 
 // Centralized Error Handler
 app.use(errorHandler);
 
-// Start HTTP Server
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`🚀 HomeSphere AI Decision Platform Backend Running`);
-  console.log(`🌐 Server URL: http://localhost:${PORT}`);
-  console.log(`📊 API Health: http://localhost:${PORT}/api/health`);
-  console.log(`====================================================`);
-});
+const pool = require('./config/db');
+const { startExpiryJob } = require('./services/expiryService');
+
+// Start HTTP Server with Verified MySQL Connection Check
+(async () => {
+  try {
+    const dbStatus = await pool.testDatabaseConnection();
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      if (dbStatus.connected) {
+        console.log(`✅ MySQL Database Connected Successfully`);
+        console.log(`Database: ${dbStatus.database}`);
+        console.log(`Host: ${dbStatus.host}`);
+        console.log(`Port: ${dbStatus.port}`);
+      } else {
+        console.error(`❌ MySQL Database Connection Failed`);
+        console.error(`Error: ${dbStatus.error}`);
+      }
+
+      // Start background auto-expiry job
+      startExpiryJob();
+    });
+  } catch (err) {
+    console.error(`❌ MySQL Database Connection Failed`);
+    console.error(`Error: ${err.message || err}`);
+  }
+})();
+
+

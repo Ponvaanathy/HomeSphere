@@ -285,6 +285,16 @@ const updateTransactionStatus = async (req, res, next) => {
 
     await pool.query('UPDATE transactions SET status = ? WHERE id = ?', [status, txId]);
 
+    // If transaction marked completed, automatically update property status to sold/rented
+    if (status === 'completed') {
+      const [txInfo] = await pool.query('SELECT property_id, deal_type FROM transactions WHERE id = ?', [txId]);
+      if (txInfo.length > 0) {
+        const propStatus = txInfo[0].deal_type === 'rent' ? 'rented' : (txInfo[0].deal_type === 'lease' ? 'leased' : 'sold');
+        await pool.query('UPDATE properties SET status = ?, updated_at = NOW() WHERE id = ?', [propStatus, txInfo[0].property_id]);
+        console.log(`🏠 [Transaction Completed] Property #${txInfo[0].property_id} status updated to "${propStatus}".`);
+      }
+    }
+
     await pool.query(
       `INSERT INTO transaction_milestones (transaction_id, stage_name, notes)
        VALUES (?, ?, ?)`,
@@ -300,6 +310,113 @@ const updateTransactionStatus = async (req, res, next) => {
   }
 };
 
+// GET /api/transactions/:id/report
+const getTransactionReport = async (req, res, next) => {
+  try {
+    const txId = req.params.id;
+    const userId = req.user.id;
+    const userRole = req.user.role;
+
+    const [transactions] = await pool.query(
+      `SELECT t.*,
+              p.title as property_title, p.category as property_category, p.subcategory as property_subcategory,
+              p.address as property_address, p.locality as property_locality, p.city as property_city, p.state as property_state,
+              p.bedrooms, p.bathrooms, p.area_sqft, p.price as base_price, p.type as listing_type,
+              (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image,
+              u_b.name as buyer_name, u_b.role as buyer_role,
+              u_s.name as seller_name, u_s.role as seller_role,
+              ts.score as trust_score, gs.score as green_score, ls.score as life_score,
+              hc.registration_cost, hc.stamp_duty, hc.maintenance_est_annual, hc.repair_contingency, hc.total_est_first_year
+       FROM transactions t
+       JOIN properties p ON t.property_id = p.id
+       JOIN users u_b ON t.buyer_id = u_b.id
+       JOIN users u_s ON t.seller_id = u_s.id
+       LEFT JOIN trust_scores ts ON p.id = ts.property_id
+       LEFT JOIN green_scores gs ON p.id = gs.property_id
+       LEFT JOIN life_scores ls ON p.id = ls.property_id
+       LEFT JOIN hidden_costs hc ON p.id = hc.property_id
+       WHERE t.id = ?`,
+      [txId]
+    );
+
+    if (!transactions || transactions.length === 0) {
+      return res.status(404).json({ success: false, message: 'Transaction record not found.' });
+    }
+
+    const t = transactions[0];
+
+    // Authorization check
+    if (t.buyer_id !== userId && t.seller_id !== userId && userRole !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Unauthorized access to transaction report.' });
+    }
+
+    const isRent = t.deal_type === 'rent' || t.deal_type === 'lease';
+    const agreedAmount = Number(t.offer_amount || t.base_price);
+    const depositAmount = Number(t.deposit_amount || (isRent ? agreedAmount * 3 : agreedAmount * 0.05));
+    const stampDuty = Number(t.stamp_duty || Math.round(agreedAmount * (isRent ? 0.01 : 0.07)));
+    const regFee = Number(t.registration_cost || (isRent ? 1000 : Math.round(agreedAmount * 0.01)));
+    const annualMaint = Number(t.maintenance_est_annual || Math.round(Number(t.area_sqft || 1000) * 2.5 * 12));
+    const totalOutlay = isRent ? (agreedAmount * 12) + depositAmount + annualMaint : agreedAmount + stampDuty + regFee + annualMaint;
+
+    const reportData = {
+      report_title: 'HOMESPHERE PROPERTY TRANSACTION SUMMARY',
+      transaction_id: `HS-TX-${t.id}-2026`,
+      transaction_raw_id: t.id,
+      transaction_date: t.created_at,
+      completion_date: t.updated_at || t.created_at,
+      status: (t.status || 'completed').toUpperCase(),
+      current_stage: t.current_stage,
+      deal_type: (t.deal_type || 'buy').toUpperCase(),
+      buyer: {
+        id: t.buyer_id,
+        name: t.buyer_name || 'HomeSphere Buyer',
+        role: t.buyer_role || 'Buyer'
+      },
+      seller: {
+        id: t.seller_id,
+        name: t.seller_name || 'HomeSphere Seller',
+        role: t.seller_role || 'Owner'
+      },
+      property: {
+        id: t.property_id,
+        title: t.property_title,
+        category: (t.property_category || 'Residential').toUpperCase(),
+        subcategory: t.property_subcategory || 'Apartment',
+        address: t.property_address,
+        locality: t.property_locality || '',
+        city: t.property_city,
+        state: t.property_state,
+        bedrooms: t.bedrooms || 1,
+        bathrooms: t.bathrooms || 1,
+        area_sqft: t.area_sqft ? `${Number(t.area_sqft).toLocaleString()} sq.ft` : 'N/A',
+        primary_image: t.primary_image || 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=600&q=80'
+      },
+      financial_summary: {
+        agreed_price: agreedAmount,
+        deposit_amount: depositAmount,
+        stamp_duty_charge: stampDuty,
+        registration_charge: regFee,
+        maintenance_annual: annualMaint,
+        total_transaction_amount: totalOutlay,
+        currency: 'INR'
+      },
+      decision_snapshot: {
+        trust_score: `${t.trust_score || 94}/100`,
+        green_living_score: `${t.green_score || 88}/100`,
+        locality_life_score: `${t.life_score || 86}/100`
+      },
+      legal_disclaimer: 'This is a HomeSphere transaction summary based on information recorded on the platform. It is not a government registration certificate, title deed, or proof of legal ownership.'
+    };
+
+    res.json({
+      success: true,
+      data: reportData
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   expressInterest,
   scheduleVisit,
@@ -307,5 +424,7 @@ module.exports = {
   getMyDeals,
   getTransactionById,
   updateMilestone,
-  updateTransactionStatus
+  updateTransactionStatus,
+  getTransactionReport
 };
+

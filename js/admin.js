@@ -147,3 +147,139 @@ async function updateUserStatus(userId, status) {
 async function loadPropertiesTable(token) {
   const tableBody = document.getElementById('propertiesTableBody');
   if (!tableBody) return;
+
+  tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><div class="spinner"></div></td></tr>';
+
+  try {
+    const res = await fetch('/api/admin/properties', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (data.success && data.data) {
+      const properties = data.data;
+      if (properties.length === 0) {
+        tableBody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No properties found in database.</td></tr>';
+        return;
+      }
+
+      tableBody.innerHTML = properties.map((p) => `
+        <tr>
+          <td>
+            <strong><a href="/property-details.html?id=${p.id}" target="_blank" style="color:var(--text-primary);text-decoration:none;">${p.title}</a></strong><br>
+            <span class="text-muted" style="font-size:0.8rem;"><i class="fas fa-map-marker-alt"></i> ${p.locality || p.city || 'Coimbatore'} | ₹${Number(p.price).toLocaleString('en-IN')}</span>
+          </td>
+          <td>
+            <span>${p.owner_name || 'Owner'}</span><br>
+            <span class="text-muted" style="font-size:0.75rem;">${p.owner_email || ''}</span>
+          </td>
+          <td>
+            <span class="badge badge-trust">${p.trust_score || 90}/100</span>
+          </td>
+          <td>
+            <span class="text-muted" style="font-size:0.8rem;">${p.verified_doc_count || 0} / ${p.doc_count || 0} Verified</span>
+          </td>
+          <td>
+            <span class="status-tag status-${p.status}">${(p.status || 'active').toUpperCase()}</span>
+          </td>
+          <td>
+            <select onchange="updatePropertyStatus(${p.id}, this.value)" class="form-select" style="padding:0.35rem 0.6rem;font-size:0.85rem;width:auto;">
+              <option value="active" ${p.status === 'active' ? 'selected' : ''}>Active</option>
+              <option value="pending" ${p.status === 'pending' ? 'selected' : ''}>Pending</option>
+              <option value="sold" ${p.status === 'sold' ? 'selected' : ''}>Sold</option>
+              <option value="rented" ${p.status === 'rented' ? 'selected' : ''}>Rented</option>
+              <option value="rejected" ${p.status === 'rejected' ? 'selected' : ''}>Reject</option>
+            </select>
+          </td>
+        </tr>
+      `).join('');
+    }
+  } catch (err) {
+    tableBody.innerHTML = '<tr><td colspan="6" class="text-rose text-center">Error loading properties inventory.</td></tr>';
+  }
+}
+
+async function updatePropertyStatus(propertyId, status) {
+  const token = localStorage.getItem('homesphere_token');
+  try {
+    const res = await fetch(`/api/admin/properties/${propertyId}/status`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ status })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message, 'success');
+      loadPropertiesTable(token);
+    }
+  } catch (err) {
+    showToast('Failed to update property status.', 'error');
+  }
+}
+
+// 4. Verification Queue
+async function loadVerificationQueue(token) {
+  const queueList = document.getElementById('verificationQueueList');
+  if (!queueList) return;
+
+  queueList.innerHTML = '<div class="spinner" style="margin: 2rem auto;"></div>';
+
+  try {
+    const res = await fetch('/api/admin/verification-queue', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+
+    if (data.success && data.data) {
+      const queue = data.data;
+      if (queue.length === 0) {
+        queueList.innerHTML = '<div class="glass-card" style="padding:2rem;text-align:center;color:var(--text-muted);">All uploaded documents are verified! Queue is clean.</div>';
+        return;
+      }
+
+      queueList.innerHTML = queue.map((doc) => `
+        <div class="glass-card" style="padding:1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+          <div>
+            <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.35rem;">
+              <span class="badge badge-trust">${(doc.doc_type || 'Title Deed').toUpperCase()}</span>
+              <strong>${doc.property_title || 'Property #' + doc.property_id}</strong>
+            </div>
+            <p class="text-muted" style="font-size:0.82rem;margin:0;">
+              Owner: <strong>${doc.owner_name || 'User'}</strong> (${doc.owner_email || ''}) | Location: ${doc.property_city || 'Coimbatore'}
+            </p>
+            ${doc.file_url ? `<a href="${doc.file_url}" target="_blank" class="text-emerald" style="font-size:0.8rem;text-decoration:underline;margin-top:0.25rem;display:inline-block;"><i class="fas fa-file-pdf"></i> View Uploaded Document</a>` : ''}
+          </div>
+          <div style="display:flex;align-items:center;gap:0.75rem;">
+            <span class="status-tag status-${doc.verified_status}">${(doc.verified_status || 'pending').toUpperCase()}</span>
+            ${doc.verified_status !== 'verified' ? `
+              <button class="btn btn-secondary btn-sm text-emerald" onclick="verifyDocument(${doc.id}, 'verified')"><i class="fas fa-check"></i> Approve</button>
+            ` : ''}
+            ${doc.verified_status !== 'rejected' ? `
+              <button class="btn btn-secondary btn-sm text-rose" onclick="verifyDocument(${doc.id}, 'rejected')"><i class="fas fa-times"></i> Reject</button>
+            ` : ''}
+          </div>
+        </div>
+      `).join('');
+    }
+  } catch (err) {
+    queueList.innerHTML = '<div class="glass-card text-rose" style="padding:1.5rem;text-align:center;">Failed to load verification queue.</div>';
+  }
+}
+
+async function verifyDocument(docId, verified_status) {
+  const token = localStorage.getItem('homesphere_token');
+  try {
+    const res = await fetch(`/api/admin/verify-document/${docId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ verified_status })
+    });
+    const data = await res.json();
+    if (data.success) {
+      showToast(data.message, 'success');
+      loadVerificationQueue(token);
+    }
+  } catch (err) {
+    showToast('Failed to verify document.', 'error');
+  }
+}

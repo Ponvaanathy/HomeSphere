@@ -10,13 +10,16 @@ router.get('/nearby', propertyController.getNearbyProperties);
 router.get('/location-intelligence', propertyController.getLocationIntelligence);
 router.get('/categories/stats', propertyController.getCategoryStats);
 router.get('/seller/my-listings', authMiddleware, propertyController.getMyProperties);
+router.get('/:id/hidden-costs', propertyController.getPropertyHiddenCosts);
 router.get('/:id/analytics', propertyController.getPropertyAnalytics);
 router.get('/:id', propertyController.getPropertyById);
 
-// Core Property CRUD
-router.post('/', authMiddleware, propertyController.createProperty);
+
+// Core Property CRUD (with Multer Property Image Upload Support)
+router.post('/', authMiddleware, uploadPropertyImages.array('images', 20), propertyController.createProperty);
 router.put('/:id', authMiddleware, propertyController.updateProperty);
 router.delete('/:id', authMiddleware, propertyController.deleteProperty);
+
 
 // Real Property Gallery Image Management
 router.post('/:id/images', authMiddleware, uploadPropertyImages.array('images', 20), propertyController.uploadImages);

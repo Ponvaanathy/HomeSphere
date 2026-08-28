@@ -12,12 +12,26 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (token) {
     if (brandLogoLink) brandLogoLink.href = '/dashboard.html';
     if (authActions) {
+      let userName = 'Profile';
+      let userInit = 'U';
+      try {
+        const u = JSON.parse(localStorage.getItem('homesphere_user') || '{}');
+        if (u.name) {
+          userName = u.name;
+          userInit = u.name.charAt(0).toUpperCase();
+        }
+      } catch (e) {}
       authActions.innerHTML = `
+        <a href="/profile.html" class="nav-profile-header-link" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.25rem 0.65rem; border-radius: 50px; background: var(--bg-surface-alt); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.8125rem; font-weight: 600;" title="View Profile">
+          <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--brand-primary); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">${userInit}</div>
+          <span class="hide-mobile">${userName}</span>
+        </a>
         <a href="/saved.html" class="btn btn-secondary btn-sm"><i class="far fa-heart"></i> Saved</a>
         <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>
       `;
     }
   }
+
 
   const params = new URLSearchParams(window.location.search);
   const propId = params.get('id');
@@ -67,21 +81,29 @@ function renderEmptyPropertyState() {
 
 function renderPropertyDetails(p, analytics = null) {
   // Title & Breadcrumbs
+  const formattedCategory = (p.category || 'Residential').replace(/_/g, ' ').toUpperCase();
+  const formattedSubtype = (p.subcategory || p.property_type || '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
   if (document.getElementById('breadcrumbCategory')) {
-    document.getElementById('breadcrumbCategory').textContent = (p.category || 'Residential').replace('_', ' ').toUpperCase();
+    document.getElementById('breadcrumbCategory').textContent = formattedSubtype ? `${formattedCategory} > ${formattedSubtype}` : formattedCategory;
   }
   if (document.getElementById('breadcrumbTitle')) {
     document.getElementById('breadcrumbTitle').textContent = p.title || 'Property Details';
   }
   if (document.getElementById('detailsTitle')) {
-    document.getElementById('detailsTitle').textContent = p.title || 'Property Listing';
+    let titleHtml = escapeHtml(p.title || 'Property Listing');
+    if (p.project_name || p.community_name) {
+      titleHtml += `<div style="font-size:0.95rem;font-weight:700;color:var(--brand-primary);margin-top:0.4rem;display:flex;align-items:center;gap:0.4rem;"><i class="fas fa-city"></i> <span>${escapeHtml(p.project_name || p.community_name)}${p.unit_number ? ' • ' + escapeHtml(p.unit_number) : ''}</span></div>`;
+    }
+    document.getElementById('detailsTitle').innerHTML = titleHtml;
   }
 
   // Location
-  const locStr = `${p.address ? p.address + ', ' : ''}${p.city || 'Location'}${p.state ? ', ' + p.state : ''}`;
+  const locStr = `${p.locality ? p.locality + ', ' : (p.address ? p.address + ', ' : '')}${p.city || 'Coimbatore'}${p.state ? ', ' + p.state : ''}`;
   if (document.getElementById('detailsLocation')) {
-    document.getElementById('detailsLocation').textContent = locStr;
+    document.getElementById('detailsLocation').innerHTML = `<i class="fas fa-map-marker-alt text-rose"></i> <span>${escapeHtml(locStr)}</span>`;
   }
+
 
   // Pricing Formats
   let priceDisplay = 'Price on Request';
@@ -211,8 +233,8 @@ function renderPropertyDetails(p, analytics = null) {
     }
   }
 
-  // 💰 1. Hidden Cost Engine Rendering
-  renderHiddenCostEngine(analytics?.hiddenCosts, p);
+  // 💰 1. Dynamic Hidden Cost Engine Rendering
+  renderHiddenCostEngine(analytics?.hiddenCosts || p.hidden_costs, p);
 
   // 🧬 Property DNA Rendering
   renderPropertyDna(p, p.property_dna);
@@ -223,10 +245,8 @@ function renderPropertyDetails(p, analytics = null) {
   // 📍 2. Locality LifeScore Radar Rendering
   renderLifeScoreRadar(analytics?.lifeScore || p.life_score, p);
 
-  // 📈 3. 5-Year Capital Forecast Rendering
-  renderCapitalForecast(analytics?.capitalForecast, p);
-
   // Update AI Advisor Link with current property ID
+
   const advisorLinks = document.querySelectorAll('a[href="/advisor.html"]');
   advisorLinks.forEach(link => {
     link.href = `/advisor.html?propertyId=${p.id}`;
@@ -248,8 +268,10 @@ function renderPropertyDetails(p, analytics = null) {
   }
 
   // Leaflet Map (Only if valid coordinates exist)
-  if (p.latitude && p.longitude && !isNaN(Number(p.latitude)) && Number(p.latitude) !== 0) {
-    initDetailsMap(Number(p.latitude), Number(p.longitude), p.title || 'Property Location');
+  const propLat = Number(p.lat !== undefined && p.lat !== null ? p.lat : p.latitude);
+  const propLng = Number(p.lng !== undefined && p.lng !== null ? p.lng : p.longitude);
+  if (!isNaN(propLat) && !isNaN(propLng) && (propLat !== 0 || propLng !== 0)) {
+    initDetailsMap(propLat, propLng, p.title || 'Property Location');
   } else {
     const mapContainer = document.getElementById('detailsMapContainer');
     if (mapContainer) {
@@ -618,51 +640,173 @@ function renderGreenLivingScore(greenScoreData, lifeScoreData) {
 }
 
 /**
- * 💰 Render Hidden Cost Engine (Real Property-Specific Calculations)
+ * 💰 Render Hidden Cost Engine (Real Dynamic Property-Specific Calculations)
  */
 function renderHiddenCostEngine(hc, p = {}) {
   const container = document.getElementById('hiddenCostContainer');
-  if (!container) return;
+  const tableWrapper = document.getElementById('hiddenCostTableWrapper');
+  const formulasList = document.getElementById('costFormulasList');
+  const assumptionsText = document.getElementById('costAssumptionsText');
+  if (!container || !tableWrapper) return;
 
-  const basePrice = (hc && hc.propertyPrice) ? Number(hc.propertyPrice) : (Number(p.price) || 0);
-  const isRent = p.type === 'rent' || p.type === 'lease';
+  const basePrice = Number(p.price) || 0;
+  const isRent = p.type === 'rent';
+  const isLease = p.type === 'lease';
+  const areaSqft = Number(p.area_sqft) || 1000;
+  const furnishing = p.furnishing || 'semi-furnished';
 
   if (!basePrice || isNaN(basePrice) || basePrice <= 0) {
-    if (document.getElementById('costBasePrice')) document.getElementById('costBasePrice').textContent = 'Price on Request';
-    if (document.getElementById('costTotal')) document.getElementById('costTotal').textContent = 'Calculation Unavailable';
+    tableWrapper.innerHTML = `
+      <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 8px; padding: 1.5rem; text-align: center; color: var(--text-muted);">
+        <i class="fas fa-calculator" style="font-size: 1.5rem; margin-bottom: 0.5rem;"></i>
+        <div>Price details required to compute dynamic hidden cost outlay.</div>
+      </div>
+    `;
     return;
   }
 
-  // Use backend calculated values or robust fallbacks
-  const stampDuty = (hc && hc.stampDuty !== undefined) ? hc.stampDuty : Math.round(basePrice * (isRent ? 0.01 : 0.07));
-  const registration = (hc && hc.registration !== undefined) ? hc.registration : (isRent ? 1500 : Math.round(basePrice * 0.01));
-  const area = Number(p.area_sqft) || 1200;
-  const maintenance = (hc && hc.maintenance !== undefined) ? hc.maintenance : (isRent ? Math.round(basePrice * 0.08 * 12) : Math.round(area * 2.5 * 12));
-  const fitOut = (hc && hc.fitOut !== undefined) ? hc.fitOut : (isRent ? 10000 : Math.round(area * 90));
-  const otherCosts = (hc && hc.otherCosts !== undefined) ? hc.otherCosts : (isRent ? 2000 : Math.round(basePrice * 0.002));
-  const totalCost = (hc && hc.totalEstimatedCost !== undefined) ? hc.totalEstimatedCost : (isRent ? (basePrice * 12) + (basePrice * 3) + maintenance + fitOut : basePrice + stampDuty + registration + maintenance + fitOut + otherCosts);
+  // Items from backend or computed on-the-fly dynamically
+  let items = [];
+  let formulas = [];
+  let modelTitle = isRent ? 'First-Year Tenant Outlay Model' : (isLease ? 'Total Leasehold Outlay Model' : 'Complete Acquisition Outlay Model');
+  let assumptions = '';
 
-  if (document.getElementById('costBasePrice')) document.getElementById('costBasePrice').textContent = `₹${basePrice.toLocaleString('en-IN')}${isRent ? '/mo' : ''}`;
-  if (document.getElementById('costRegistration')) document.getElementById('costRegistration').textContent = `₹${stampDuty.toLocaleString('en-IN')}`;
-  if (document.getElementById('costGovtFee')) document.getElementById('costGovtFee').textContent = `₹${registration.toLocaleString('en-IN')}`;
-  if (document.getElementById('costMaintenance')) document.getElementById('costMaintenance').textContent = `₹${maintenance.toLocaleString('en-IN')}/yr`;
-  if (document.getElementById('costReno')) document.getElementById('costReno').textContent = `₹${fitOut.toLocaleString('en-IN')}`;
-  if (document.getElementById('costOther')) document.getElementById('costOther').textContent = `₹${otherCosts.toLocaleString('en-IN')}`;
-  if (document.getElementById('costTotal')) document.getElementById('costTotal').textContent = `₹${totalCost.toLocaleString('en-IN')}`;
+  if (hc && Array.isArray(hc.items) && hc.items.length > 0) {
+    items = hc.items;
+    formulas = hc.formulas || [];
+    modelTitle = hc.modelTitle || modelTitle;
+    assumptions = hc.assumptions || '';
+  } else {
+    // Dynamic fallback
+    if (isRent) {
+      const annualRent = basePrice * 12;
+      const stamp = hc?.stampDuty ?? Math.max(500, Math.round(annualRent * 0.01));
+      const reg = hc?.registration ?? 1000;
+      const maint = hc?.maintenance ?? Math.round(areaSqft * 2.5 * 12);
+      const fit = hc?.fitOut ?? (furnishing === 'unfurnished' ? Math.round(areaSqft * 25) : (furnishing === 'fully-furnished' ? 3000 : Math.round(areaSqft * 10)));
+      const other = hc?.otherCosts ?? 0;
 
-  if (document.getElementById('costStampBadge')) {
-    document.getElementById('costStampBadge').textContent = isRent ? 'Estimated ~1% Lease Stamp' : 'Estimated ~7% Stamp Duty';
+      items = [
+        { name: 'Annual Rent (12 Months)', amount: annualRent, isEstimated: false, badge: 'Base Commitment', subtitle: `₹${basePrice.toLocaleString('en-IN')}/mo × 12 months` },
+        { name: 'Tenancy Agreement Stamp Duty', amount: stamp, isEstimated: true, badge: 'Estimated ~1%', subtitle: 'Standard 11-month lease agreement stamp duty' },
+        { name: 'Agreement Drafting & e-Registration', amount: reg, isEstimated: true, badge: 'Estimated', subtitle: 'Notary verification & e-filing fee buffer' },
+        { name: 'Annual Society Maintenance', amount: maint, isEstimated: true, badge: 'Estimated', subtitle: `Estimated at ₹2.5/sq.ft/mo × 12 (${areaSqft.toLocaleString('en-IN')} sq.ft)` },
+        { name: 'Fit-out / Move-in Setup', amount: fit, isEstimated: true, badge: 'Estimated', subtitle: `Move-in readiness for ${furnishing.replace('_', ' ')} specifications` },
+        { name: 'Other Applicable Costs', amount: other, isEstimated: false, badge: other > 0 ? 'Owner Provided' : 'None', subtitle: other > 0 ? 'Owner specified costs' : 'No additional owner charges' }
+      ];
+
+      formulas = [
+        { item: 'Annual Rent', formula: `₹${basePrice.toLocaleString('en-IN')} × 12 = ₹${annualRent.toLocaleString('en-IN')}`, basis: 'Monthly Rent' },
+        { item: 'Tenancy Stamp Duty', formula: `₹${annualRent.toLocaleString('en-IN')} × 1.0% = ₹${stamp.toLocaleString('en-IN')}`, basis: 'State Tenancy Slabs' },
+        { item: 'Annual Maintenance', formula: `${areaSqft} sq.ft × ₹2.5/sq.ft/mo × 12 = ₹${maint.toLocaleString('en-IN')}/yr`, basis: 'Area Scale' },
+        { item: 'Fit-out / Setup', formula: `Move-in setup buffer for ${furnishing} = ₹${fit.toLocaleString('en-IN')}`, basis: 'Furnishing Status' }
+      ];
+    } else {
+      const stamp = hc?.stampDuty ?? Math.round(basePrice * 0.07);
+      const reg = hc?.registration ?? Math.round(basePrice * 0.01);
+      const maint = hc?.maintenance ?? Math.round(areaSqft * 2.5 * 12);
+      const fit = hc?.fitOut ?? Math.round(areaSqft * (furnishing === 'unfurnished' ? 250 : (furnishing === 'fully-furnished' ? 40 : 120)));
+      const other = hc?.otherCosts ?? Math.round(basePrice * 0.002 + 10000);
+
+      items = [
+        { name: 'Property Purchase Price', amount: basePrice, isEstimated: false, badge: 'Base Price', subtitle: 'Agreed transaction listing price' },
+        { name: 'Statutory Stamp Duty', amount: stamp, isEstimated: true, badge: 'Estimated ~7%', subtitle: 'State conveyance stamp duty (~7.0% benchmark)' },
+        { name: 'Sub-Registrar Registration Fee', amount: reg, isEstimated: true, badge: 'Estimated ~1%', subtitle: 'Sub-registrar property registration (~1.0% benchmark)' },
+        { name: 'Annual Society Maintenance', amount: maint, isEstimated: true, badge: 'Estimated', subtitle: `Estimated at ₹2.5/sq.ft/mo × 12 (${areaSqft.toLocaleString('en-IN')} sq.ft)` },
+        { name: 'Fit-out / Interior Budget', amount: fit, isEstimated: true, badge: 'Estimated', subtitle: `Interior woodwork & modular fixtures for ${furnishing.replace('_', ' ')}` },
+        { name: 'Legal Due Diligence & Municipal Tax', amount: other, isEstimated: true, badge: 'Estimated', subtitle: 'Legal title verification buffer & 1st year municipal property tax' }
+      ];
+
+      formulas = [
+        { item: 'Property Price', formula: `Listing Purchase Price = ₹${basePrice.toLocaleString('en-IN')}`, basis: 'Agreed Price' },
+        { item: 'Stamp Duty', formula: `₹${basePrice.toLocaleString('en-IN')} × 7.0% = ₹${stamp.toLocaleString('en-IN')}`, basis: 'State Conveyance Slabs' },
+        { item: 'Registration Fee', formula: `₹${basePrice.toLocaleString('en-IN')} × 1.0% = ₹${reg.toLocaleString('en-IN')}`, basis: 'Municipal Benchmark' },
+        { item: 'Annual Maintenance', formula: `${areaSqft} sq.ft × ₹2.5/sq.ft/mo × 12 = ₹${maint.toLocaleString('en-IN')}/yr`, basis: 'Area Scale' }
+      ];
+    }
   }
-  if (document.getElementById('costMaintSub')) {
-    document.getElementById('costMaintSub').textContent = isRent ? '(Annual maintenance reserve)' : `(Scaled to ${area.toLocaleString('en-IN')} sq.ft)`;
+
+  // Strict mathematical sum of all visible line items
+  const totalOutlay = items.reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
+
+  // Render Table HTML
+  tableWrapper.innerHTML = `
+    <table class="costs-table" style="width: 100%; border-collapse: collapse;">
+      <thead>
+        <tr style="background: #f8fafc; border-bottom: 1.5px solid var(--border-color); font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); letter-spacing: 0.05em;">
+          <th style="padding: 0.75rem 1rem; text-align: left;">Cost Component</th>
+          <th style="padding: 0.75rem 1rem; text-align: center; width: 140px;">Category</th>
+          <th style="padding: 0.75rem 1rem; text-align: right; width: 160px;">Calculated Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${items.map((item, idx) => {
+          const isPrimary = idx === 0;
+          const badgeClass = item.isEstimated ? 'background: #fef3c7; color: #92400e; border: 1px solid #fcd34d;' : 'background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0;';
+          return `
+            <tr style="border-bottom: 1px solid var(--border-color);">
+              <td style="padding: 0.85rem 1rem;">
+                <div style="font-weight: ${isPrimary ? '800' : '600'}; color: var(--text-primary); font-size: 0.9rem;">
+                  ${escapeHtml(item.name)}
+                </div>
+                ${item.subtitle ? `<div class="text-muted" style="font-size: 0.75rem; margin-top: 0.15rem;">${escapeHtml(item.subtitle)}</div>` : ''}
+              </td>
+              <td style="padding: 0.85rem 1rem; text-align: center;">
+                <span class="badge" style="font-size: 0.68rem; font-weight: 700; padding: 0.2rem 0.5rem; border-radius: 4px; ${badgeClass}">
+                  ${item.isEstimated ? 'Estimated' : (item.badge || 'Actual')}
+                </span>
+              </td>
+              <td style="padding: 0.85rem 1rem; text-align: right; font-weight: ${isPrimary ? '800' : '700'}; color: var(--text-primary); font-size: 0.95rem;">
+                ₹${Number(item.amount).toLocaleString('en-IN')}
+              </td>
+            </tr>
+          `;
+        }).join('')}
+        <tr class="total-row" style="background: #eff6ff; border-top: 2px solid var(--brand-primary); font-size: 1.05rem;">
+          <td style="padding: 1rem; font-weight: 800; color: var(--brand-primary);">
+            <div>Total ${isRent ? 'First-Year Tenant Outlay' : (isLease ? 'Leasehold Outlay' : 'Acquisition Outlay')}</div>
+            <div style="font-size: 0.72rem; font-weight: normal; color: var(--text-secondary); margin-top: 0.1rem;">
+              Exact sum of all ${items.length} visible cost components above
+            </div>
+          </td>
+          <td style="padding: 1rem; text-align: center;">
+            <span class="badge" style="background: var(--brand-primary); color: #ffffff; font-size: 0.7rem; font-weight: 800;">
+              SUM TOTAL
+            </span>
+          </td>
+          <td style="padding: 1rem; text-align: right; font-weight: 800; font-size: 1.25rem; color: var(--brand-primary); font-family: var(--font-heading);">
+            ₹${totalOutlay.toLocaleString('en-IN')}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  `;
+
+  // Render Formulas list
+  if (formulasList) {
+    if (formulas && formulas.length > 0) {
+      formulasList.innerHTML = formulas.map(f => `
+        <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: 6px; padding: 0.5rem 0.75rem; font-size: 0.78rem;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 0.15rem;">
+            <strong style="color: var(--text-primary);">${escapeHtml(f.item)}:</strong>
+            <span class="text-muted" style="font-size: 0.7rem;">(${escapeHtml(f.basis || 'Standard Model')})</span>
+          </div>
+          <div style="color: var(--brand-primary); font-family: monospace; font-size: 0.8rem; font-weight: 600;">
+            ${escapeHtml(f.formula)}
+          </div>
+        </div>
+      `).join('');
+    } else {
+      formulasList.innerHTML = '';
+    }
   }
-  if (document.getElementById('costFitoutSub')) {
-    document.getElementById('costFitoutSub').textContent = `(Based on ${p.furnishing ? p.furnishing.replace('_', ' ') : 'semi-furnished'})`;
-  }
-  if (document.getElementById('costAssumptionsText') && hc && hc.assumptions) {
-    document.getElementById('costAssumptionsText').textContent = hc.assumptions;
+
+  // Update assumptions description
+  if (assumptionsText && assumptions) {
+    assumptionsText.textContent = assumptions;
   }
 }
+
 
 /**
  * 📍 Render Locality LifeScore Radar (0–10 Scale + Interactive Canvas Radar)
@@ -900,256 +1044,9 @@ function drawRadarChart(scores) {
   });
 }
 
-/**
- * 📈 Render 5-Year Capital Forecast & Resale Velocity
- */
-function renderCapitalForecast(cf, p = {}) {
-  const container = document.getElementById('capitalForecastContainer');
-  const cagrBadge = document.getElementById('forecastCagrBadge');
-  const velocityBadge = document.getElementById('forecastVelocityBadge');
-  if (!container) return;
-
-  const currentPrice = (cf && cf.currentValue) ? Number(cf.currentValue) : (Number(p.price) || 0);
-
-  if (!currentPrice || isNaN(currentPrice) || currentPrice <= 0) {
-    container.innerHTML = `
-      <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: 14px; padding: 2rem; text-align: center;">
-        <i class="fas fa-chart-line text-muted" style="font-size: 2rem; margin-bottom: 0.5rem;"></i>
-        <div style="font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">Capital Forecast Unavailable</div>
-        <div class="text-secondary" style="font-size: 0.8125rem;">Price information required to project 5-year capital appreciation.</div>
-      </div>
-    `;
-    return;
-  }
-
-  const cagr = (cf && cf.cagr) ? Number(cf.cagr) : 7.2;
-  const year1 = (cf && cf.year1) ? cf.year1 : Math.round(currentPrice * (1 + cagr / 100));
-  const year2 = (cf && cf.year2) ? cf.year2 : Math.round(currentPrice * Math.pow(1 + cagr / 100, 2));
-  const year3 = (cf && cf.year3) ? cf.year3 : Math.round(currentPrice * Math.pow(1 + cagr / 100, 3));
-  const year4 = (cf && cf.year4) ? cf.year4 : Math.round(currentPrice * Math.pow(1 + cagr / 100, 4));
-  const year5 = (cf && cf.year5) ? cf.year5 : Math.round(currentPrice * Math.pow(1 + cagr / 100, 5));
-  const growthPct = (cf && cf.growthPercentage) ? cf.growthPercentage : Number((((year5 - currentPrice) / currentPrice) * 100).toFixed(1));
-  const resaleVelocity = (cf && cf.resaleVelocity) ? cf.resaleVelocity : 'FAST';
-  const velocityReason = (cf && cf.velocityReason) ? cf.velocityReason : 'High secondary market liquidity and steady residential absorption.';
-
-  if (cagrBadge) cagrBadge.innerHTML = `<i class="fas fa-arrow-trend-up"></i> ~${cagr}% CAGR`;
-  if (velocityBadge) {
-    velocityBadge.innerHTML = `<i class="fas fa-bolt"></i> ${resaleVelocity} Resale`;
-    velocityBadge.className = resaleVelocity === 'FAST' ? 'score-pill green' : (resaleVelocity === 'MODERATE' ? 'score-pill trust' : 'score-pill life');
-  }
-
-  // Format INR
-  const fmtInr = (n) => {
-    if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)} Cr`;
-    if (n >= 100000) return `₹${(n / 100000).toFixed(2)} Lakhs`;
-    return `₹${Number(n).toLocaleString('en-IN')}`;
-  };
-
-  container.innerHTML = `
-    <!-- 4-Stat Metric Cards Grid -->
-    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem;" class="forecast-stats-grid">
-      <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Current Value</div>
-        <div style="font-size: 1.25rem; font-weight: 800; color: var(--text-primary); margin-top: 0.25rem;">${fmtInr(currentPrice)}</div>
-        <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.2rem;">Baseline Valuation</div>
-      </div>
-      <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">5-Year Projected</div>
-        <div style="font-size: 1.25rem; font-weight: 800; color: #059669; margin-top: 0.25rem;">${fmtInr(year5)}</div>
-        <div style="font-size: 0.72rem; color: #059669; font-weight: 600; margin-top: 0.2rem;">+${fmtInr(year5 - currentPrice)} Gain</div>
-      </div>
-      <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">5-Year Growth</div>
-        <div style="font-size: 1.25rem; font-weight: 800; color: var(--brand-primary); margin-top: 0.25rem;">+${growthPct}%</div>
-        <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.2rem;">Compounded ROI</div>
-      </div>
-      <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 1rem;">
-        <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Resale Velocity</div>
-        <div style="font-size: 1.25rem; font-weight: 800; color: ${resaleVelocity === 'FAST' ? '#059669' : '#2563eb'}; margin-top: 0.25rem;">${resaleVelocity}</div>
-        <div style="font-size: 0.72rem; color: var(--text-secondary); margin-top: 0.2rem;">Market Liquidity</div>
-      </div>
-    </div>
-
-    <!-- Interactive Canvas Trajectory Chart -->
-    <div style="background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);"><i class="fas fa-chart-area text-emerald"></i> Appreciation Curve (Years 0 to 5)</div>
-        <span class="badge" style="background: #ecfdf5; color: #065f46; font-size: 0.72rem; font-weight: 700;">Compounding at ~${cagr}% CAGR</span>
-      </div>
-      <div style="width: 100%; overflow-x: auto;">
-        <canvas id="capitalTrajectoryCanvas" width="620" height="220" style="width: 100%; max-width: 620px; height: auto; display: block; margin: auto;"></canvas>
-      </div>
-    </div>
-
-    <!-- Annual Breakdown Table -->
-    <table class="costs-table" style="margin-bottom: 1rem;">
-      <thead>
-        <tr style="background: #f8fafc; font-size: 0.78rem; text-transform: uppercase; color: var(--text-muted);">
-          <th>Year Horizon</th>
-          <th style="text-align: right;">Estimated Property Value</th>
-          <th style="text-align: right;">Cumulative Appreciation</th>
-          <th style="text-align: right;">Growth %</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <td><strong>Current Valuation (Year 0)</strong></td>
-          <td style="text-align: right; font-weight: 700;">${fmtInr(currentPrice)}</td>
-          <td style="text-align: right; color: var(--text-muted);">Baseline</td>
-          <td style="text-align: right; color: var(--text-muted);">0.0%</td>
-        </tr>
-        <tr>
-          <td>Year 1 Projected</td>
-          <td style="text-align: right; font-weight: 600;">${fmtInr(year1)}</td>
-          <td style="text-align: right; color: #059669;">+${fmtInr(year1 - currentPrice)}</td>
-          <td style="text-align: right; font-weight: 700; color: #059669;">+${cagr}%</td>
-        </tr>
-        <tr>
-          <td>Year 2 Projected</td>
-          <td style="text-align: right; font-weight: 600;">${fmtInr(year2)}</td>
-          <td style="text-align: right; color: #059669;">+${fmtInr(year2 - currentPrice)}</td>
-          <td style="text-align: right; font-weight: 700; color: #059669;">+${(((year2 - currentPrice) / currentPrice) * 100).toFixed(1)}%</td>
-        </tr>
-        <tr>
-          <td>Year 3 Projected</td>
-          <td style="text-align: right; font-weight: 600;">${fmtInr(year3)}</td>
-          <td style="text-align: right; color: #059669;">+${fmtInr(year3 - currentPrice)}</td>
-          <td style="text-align: right; font-weight: 700; color: #059669;">+${(((year3 - currentPrice) / currentPrice) * 100).toFixed(1)}%</td>
-        </tr>
-        <tr>
-          <td>Year 4 Projected</td>
-          <td style="text-align: right; font-weight: 600;">${fmtInr(year4)}</td>
-          <td style="text-align: right; color: #059669;">+${fmtInr(year4 - currentPrice)}</td>
-          <td style="text-align: right; font-weight: 700; color: #059669;">+${(((year4 - currentPrice) / currentPrice) * 100).toFixed(1)}%</td>
-        </tr>
-        <tr style="background: #f0fdf4; font-weight: 700;">
-          <td><strong style="color: #065f46;">Year 5 Projected Outcome</strong></td>
-          <td style="text-align: right; color: #065f46; font-size: 1rem;">${fmtInr(year5)}</td>
-          <td style="text-align: right; color: #059669;">+${fmtInr(year5 - currentPrice)}</td>
-          <td style="text-align: right; color: #059669; font-size: 1rem;">+${growthPct}%</td>
-        </tr>
-      </tbody>
-    </table>
-
-    <!-- Resale Velocity & Methodology Disclaimer -->
-    <div style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1rem;">
-      <strong>Resale Velocity Analysis:</strong> ${velocityReason}<br>
-      <em>Disclaimer: This model generates an Estimated Forecast derived from historical municipal land records, micro-market absorption trends, and surrounding infrastructure growth. Actual future values depend on broader macroeconomic conditions.</em>
-    </div>
-  `;
-
-  // Draw the trajectory chart
-  setTimeout(() => drawTrajectoryChart({ currentPrice, year1, year2, year3, year4, year5 }), 50);
-}
-
-/**
- * 🎨 Pure Canvas 2D Trajectory Line Chart Renderer
- */
-function drawTrajectoryChart(data) {
-  const canvas = document.getElementById('capitalTrajectoryCanvas');
-  if (!canvas) return;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return;
-
-  const w = canvas.width;
-  const h = canvas.height;
-  const padLeft = 70;
-  const padRight = 30;
-  const padTop = 25;
-  const padBottom = 35;
-
-  ctx.clearRect(0, 0, w, h);
-
-  const values = [data.currentPrice, data.year1, data.year2, data.year3, data.year4, data.year5];
-  const labels = ['Year 0', 'Year 1', 'Year 2', 'Year 3', 'Year 4', 'Year 5'];
-
-  const minVal = Math.min(...values) * 0.95;
-  const maxVal = Math.max(...values) * 1.05;
-
-  const getX = (i) => padLeft + (i / (values.length - 1)) * (w - padLeft - padRight);
-  const getY = (val) => h - padBottom - ((val - minVal) / (maxVal - minVal)) * (h - padTop - padBottom);
-
-  // 1. Gridlines
-  ctx.strokeStyle = '#e2e8f0';
-  ctx.lineWidth = 1;
-  const numGridLines = 4;
-  ctx.font = '10px Inter, sans-serif';
-  ctx.fillStyle = '#94a3b8';
-  ctx.textAlign = 'right';
-
-  for (let i = 0; i <= numGridLines; i++) {
-    const val = minVal + (i / numGridLines) * (maxVal - minVal);
-    const y = getY(val);
-    ctx.beginPath();
-    ctx.moveTo(padLeft, y);
-    ctx.lineTo(w - padRight, y);
-    ctx.stroke();
-
-    let labelStr = `₹${(val / 100000).toFixed(0)}L`;
-    if (val >= 10000000) labelStr = `₹${(val / 10000000).toFixed(2)}Cr`;
-    ctx.fillText(labelStr, padLeft - 8, y + 3);
-  }
-
-  // 2. X Axis Labels
-  ctx.textAlign = 'center';
-  labels.forEach((lbl, i) => {
-    const x = getX(i);
-    ctx.fillText(lbl, x, h - 12);
-  });
-
-  // 3. Shaded Area Under Curve
-  ctx.beginPath();
-  ctx.moveTo(getX(0), h - padBottom);
-  values.forEach((v, i) => {
-    ctx.lineTo(getX(i), getY(v));
-  });
-  ctx.lineTo(getX(values.length - 1), h - padBottom);
-  ctx.closePath();
-
-  const areaGrad = ctx.createLinearGradient(0, padTop, 0, h - padBottom);
-  areaGrad.addColorStop(0, 'rgba(16, 185, 129, 0.35)');
-  areaGrad.addColorStop(1, 'rgba(16, 185, 129, 0.02)');
-  ctx.fillStyle = areaGrad;
-  ctx.fill();
-
-  // 4. Line Curve
-  ctx.beginPath();
-  values.forEach((v, i) => {
-    const x = getX(i);
-    const y = getY(v);
-    if (i === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.strokeStyle = '#059669';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  // 5. Data Points & Value Badges
-  ctx.font = 'bold 10px Inter, sans-serif';
-  values.forEach((v, i) => {
-    const x = getX(i);
-    const y = getY(v);
-
-    // Dot
-    ctx.beginPath();
-    ctx.arc(x, y, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.strokeStyle = '#059669';
-    ctx.lineWidth = 2.5;
-    ctx.stroke();
-
-    // Value tag
-    let valStr = `₹${(v / 100000).toFixed(1)}L`;
-    if (v >= 10000000) valStr = `₹${(v / 10000000).toFixed(2)}Cr`;
-
-    ctx.fillStyle = '#065f46';
-    ctx.fillText(valStr, x, y - 10);
-  });
-}
-
 
 function switchGalleryImg(src, el) {
+
   const mainImg = document.getElementById('galleryMainImg');
   if (mainImg) mainImg.src = src;
   document.querySelectorAll('.gallery-thumb-item').forEach(t => t.classList.remove('active'));

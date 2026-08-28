@@ -3,12 +3,28 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>User Dashboard | HomeSphere</title>
-  <meta name="description" content="HomeSphere User Dashboard: View personalized property recommendations, saved shortlists, comparison matrices, and listing portfolios.">
+  <title>HomeSphere Insights | HomeSphere</title>
+  <meta name="description" content="HomeSphere Insights: View personalized property recommendations, saved shortlists, comparison matrices, and listing portfolios.">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/css/style.css">
   <link rel="stylesheet" href="/css/dashboard.css">
   <link rel="stylesheet" href="/css/properties.css">
+  <style>
+    .nav-profile-header-link {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      text-decoration: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: var(--radius-sm);
+      transition: all 0.15s ease;
+      cursor: pointer;
+    }
+    .nav-profile-header-link:hover {
+      background: var(--bg-surface-alt);
+      outline: 1px solid var(--border-color);
+    }
+  </style>
 </head>
 <body>
 
@@ -22,12 +38,13 @@
 
       <!-- Header Search & Location -->
       <div style="display: flex; align-items: center; gap: 1rem; flex: 1; max-width: 540px; margin: 0 2rem;">
-        <div style="position: relative; flex: 1;">
+        <form id="dashHeaderSearchForm" onsubmit="handleDashboardHeaderSearch(event)" style="position: relative; flex: 1; margin: 0;">
           <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.875rem;"></i>
-          <input type="text" id="headerSearchInput" class="form-input" placeholder="Search by city, locality, project..." style="padding-left: 2.5rem; height: 40px;">
-        </div>
+          <input type="text" id="headerSearchInput" class="form-input" placeholder="Search by city, locality, 2 BHK, project..." style="padding-left: 2.5rem; height: 40px;">
+        </form>
 
         <div style="display: flex; align-items: center; gap: 0.4rem; background: var(--bg-surface-alt); padding: 0.4rem 0.85rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color); font-size: 0.8125rem; font-weight: 600; color: var(--text-primary); white-space: nowrap;">
+
           <i class="fas fa-map-marker-alt text-brand"></i>
           <span id="headerLocationLabel">Coimbatore, TN</span>
         </div>
@@ -35,18 +52,19 @@
 
       <!-- Header User Profile & Notifications -->
       <div class="nav-actions">
-        <a href="/notifications.html" class="btn btn-secondary btn-sm" style="position: relative; padding: 0.45rem 0.75rem;">
+        <a href="/notifications.html" class="btn btn-secondary btn-sm" style="position: relative; padding: 0.45rem 0.75rem;" title="Notifications">
           <i class="fas fa-bell"></i>
           <span id="unreadNotifDot" style="display: none; position: absolute; top: 6px; right: 6px; width: 7px; height: 7px; background-color: var(--accent-rose); border-radius: 50%;"></span>
         </a>
 
-        <div style="display: flex; align-items: center; gap: 0.65rem;">
-          <div style="width: 32px; height: 32px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;" id="dashAvatarInitial">U</div>
+        <a href="/profile.html" class="nav-profile-header-link" id="dashTopProfileLink" title="View & Edit Your Profile">
+          <div style="width: 34px; height: 34px; border-radius: 50%; background: var(--brand-primary-light); color: var(--brand-primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.875rem; border: 1.5px solid var(--brand-primary);" id="dashAvatarInitial">U</div>
           <div style="text-align: left; line-height: 1.2;">
             <div style="font-size: 0.875rem; font-weight: 700; color: var(--text-primary);" id="dashHeaderUserName">User Account</div>
             <div class="text-muted" style="font-size: 0.72rem;" id="dashUserRoleBadge">Verified Account</div>
           </div>
-        </div>
+          <i class="fas fa-chevron-right" style="font-size: 0.7rem; color: var(--text-muted); margin-left: 0.25rem;"></i>
+        </a>
       </div>
     </div>
   </nav>
@@ -69,9 +87,9 @@
       <a href="/my-listings.html" class="sidebar-nav-item"><i class="fas fa-building text-emerald"></i> My Listings</a>
       <a href="/list-property.html" class="sidebar-nav-item"><i class="fas fa-plus-circle text-emerald"></i> Post Property</a>
       <a href="/notifications.html" class="sidebar-nav-item"><i class="far fa-bell"></i> Property Alerts</a>
-      <a href="/messages.html" class="sidebar-nav-item"><i class="far fa-comment-dots"></i> Messages</a>
 
       <div class="sidebar-heading" style="margin-top: 1rem;">Settings</div>
+
       <a href="/profile.html" class="sidebar-nav-item"><i class="fas fa-user-cog"></i> Profile & Preferences</a>
       <a href="#" onclick="handleLogout()" class="sidebar-nav-item" style="color: var(--accent-rose); margin-top: auto;">
         <i class="fas fa-sign-out-alt"></i> Logout
@@ -86,7 +104,7 @@
         <div>
           <div class="section-eyebrow"><i class="fas fa-th-large text-brand"></i> Activity & Decision Hub</div>
           <h1 style="font-size: 2rem; color: var(--text-primary); margin-top: 0.25rem;">
-            Property Dashboard
+            HomeSphere Insights
           </h1>
           <p class="text-secondary" style="font-size: 0.95rem;">
             Track your real-time property activity, market recommendations, and decision analytics.

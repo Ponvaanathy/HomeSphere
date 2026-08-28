@@ -1,6 +1,6 @@
 /**
  * HomeSphere - Location & GPS Intelligence Controller
- * Real Leaflet + OpenStreetMap, Geolocation, Geospatial Radius, and Locality LifeScore Engine
+ * Real Interactive Leaflet Map, Geocoding, Geographic Distance Filtering, and Sync Engine
  */
 
 let mapInstance = null;
@@ -12,6 +12,7 @@ let userGpsMarker = null;
 let propertyMarkersMap = new Map(); // propertyId -> L.Marker
 
 let activeProperties = [];
+let recommendedProperties = [];
 let currentLocation = {
   name: 'Peelamedu, Coimbatore',
   locality: 'Peelamedu',
@@ -21,6 +22,10 @@ let currentLocation = {
 };
 let currentRadius = 5; // Default 5 km
 let currentType = 'all'; // 'all', 'rent', 'buy', 'sell', 'lease'
+let currentCategory = 'all'; // 'all', 'residential', 'commercial', etc.
+let currentBudget = 'all';
+let currentBhk = 'all';
+
 let isViewportSearch = false;
 let searchDebounceTimer = null;
 let mapMoveDebounceTimer = null;
@@ -40,7 +45,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupMapMovementListeners();
   setupMobileToggle();
 
-  // Initial load for default locality (Peelamedu)
+  // Initial load for default location
   await performLocationSearch(currentLocation.lat, currentLocation.lng, currentLocation.name, false);
 });
 
@@ -56,12 +61,26 @@ function syncNavbarAuth() {
   if (token && userStr) {
     if (brandLogoLink) brandLogoLink.href = '/dashboard.html';
     if (authActions) {
+      let userName = 'Profile';
+      let userInit = 'U';
+      try {
+        const u = JSON.parse(userStr);
+        if (u.name) {
+          userName = u.name;
+          userInit = u.name.charAt(0).toUpperCase();
+        }
+      } catch (e) {}
       authActions.innerHTML = `
+        <a href="/profile.html" class="nav-profile-header-link" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.25rem 0.65rem; border-radius: 50px; background: var(--bg-surface-alt); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.8125rem; font-weight: 600;" title="View Profile">
+          <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--brand-primary); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">${userInit}</div>
+          <span class="hide-mobile">${userName}</span>
+        </a>
         <a href="/saved.html" class="btn btn-secondary btn-sm" title="Saved Properties"><i class="far fa-heart"></i> <span class="hide-mobile">Saved</span></a>
         <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> <span class="hide-mobile">Dashboard</span></a>
       `;
     }
   }
+
 }
 
 /**
@@ -73,7 +92,7 @@ function initLeafletMap() {
       center: [currentLocation.lat, currentLocation.lng],
       zoom: 13,
       zoomControl: false,
-      minZoom: 4,
+      minZoom: 3,
       maxZoom: 19
     });
 
@@ -89,21 +108,21 @@ function initLeafletMap() {
     markersLayer = L.featureGroup().addTo(mapInstance);
     amenitiesLayer = L.featureGroup().addTo(mapInstance);
 
-    // MAP CLICK SELECTION: User clicks anywhere on the map
+    // MAP CLICK SELECTION: User clicks ANY location on the map
     mapInstance.on('click', async (e) => {
       const clickedLat = e.latlng.lat;
       const clickedLng = e.latlng.lng;
 
-      // Reverse geocode to find locality name
-      let locName = `${clickedLat.toFixed(4)}, ${clickedLng.toFixed(4)}`;
+      // Reverse geocode clicked coordinates via backend API
+      let locName = `Selected Point (${clickedLat.toFixed(4)}, ${clickedLng.toFixed(4)})`;
       try {
-        const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${clickedLat}&lon=${clickedLng}`);
+        const revRes = await fetch(`/api/search/reverse-geocode?lat=${clickedLat}&lng=${clickedLng}`);
         const revData = await revRes.json();
-        if (revData && revData.display_name) {
-          locName = revData.display_name.split(',').slice(0, 3).join(', ');
+        if (revData && revData.success && revData.display_name) {
+          locName = revData.display_name;
         }
       } catch (err) {
-        // Fallback to coordinates
+        console.warn('Reverse geocoding error:', err);
       }
 
       await performLocationSearch(clickedLat, clickedLng, locName, true);
@@ -131,20 +150,22 @@ function setupGpsButton() {
 
   const triggerGps = () => {
     if (!navigator.geolocation) {
-      showGeoAlert('Geolocation is not supported by your browser. Please search manually.');
+      showGeoAlert('Location permission was denied. Search for a location manually.');
       return;
     }
 
     if (btnGps) {
       btnGps.classList.add('loading');
-      document.getElementById('gpsBtnText').textContent = 'Locating GPS...';
+      const textEl = document.getElementById('gpsBtnText');
+      if (textEl) textEl.textContent = 'Locating GPS...';
     }
 
     navigator.geolocation.getCurrentPosition(
       async (pos) => {
         if (btnGps) {
           btnGps.classList.remove('loading');
-          document.getElementById('gpsBtnText').textContent = 'Use My Current Location';
+          const textEl = document.getElementById('gpsBtnText');
+          if (textEl) textEl.textContent = 'Use My Current Location';
         }
 
         const lat = pos.coords.latitude;
@@ -169,17 +190,15 @@ function setupGpsButton() {
         userGpsMarker = L.marker([lat, lng], { icon: beaconIcon, zIndexOffset: 1000 }).addTo(mapInstance);
         userGpsMarker.bindTooltip('📍 <strong>You Are Here</strong>', { permanent: false, direction: 'top' });
 
-        // Reverse geocode user location
-        let userLocName = 'My Current Location';
+        // Reverse geocode user location via backend
+        let userLocName = `My Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
         try {
-          const revRes = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+          const revRes = await fetch(`/api/search/reverse-geocode?lat=${lat}&lng=${lng}`);
           const revData = await revRes.json();
-          if (revData && revData.display_name) {
-            userLocName = revData.display_name.split(',').slice(0, 3).join(', ');
+          if (revData && revData.success && revData.display_name) {
+            userLocName = revData.display_name;
           }
-        } catch (e) {
-          // Fallback to name
-        }
+        } catch (e) {}
 
         hideGeoAlert();
         await performLocationSearch(lat, lng, userLocName, true);
@@ -187,9 +206,10 @@ function setupGpsButton() {
       (err) => {
         if (btnGps) {
           btnGps.classList.remove('loading');
-          document.getElementById('gpsBtnText').textContent = 'Use My Current Location';
+          const textEl = document.getElementById('gpsBtnText');
+          if (textEl) textEl.textContent = 'Use My Current Location';
         }
-        showGeoAlert('Location access is unavailable. Search for a location manually.');
+        showGeoAlert('Location permission was denied. Search for a location manually.');
       },
       { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
     );
@@ -244,6 +264,31 @@ function setupFilterEventListeners() {
     });
   });
 
+  // Secondary Filters: Category, Budget, BHK
+  const catSelect = document.getElementById('filterCategorySelect');
+  if (catSelect) {
+    catSelect.addEventListener('change', async (e) => {
+      currentCategory = e.target.value;
+      await loadProperties();
+    });
+  }
+
+  const budgetSelect = document.getElementById('filterBudgetSelect');
+  if (budgetSelect) {
+    budgetSelect.addEventListener('change', async (e) => {
+      currentBudget = e.target.value;
+      await loadProperties();
+    });
+  }
+
+  const bhkSelect = document.getElementById('filterBhkSelect');
+  if (bhkSelect) {
+    bhkSelect.addEventListener('change', async (e) => {
+      currentBhk = e.target.value;
+      await loadProperties();
+    });
+  }
+
   // Reset Filters Button
   const btnReset = document.getElementById('btnResetFilters');
   if (btnReset) {
@@ -257,6 +302,13 @@ function setupFilterEventListeners() {
       const defaultRadiusPill = document.querySelector('#radiusSelectorGroup .radius-pill[data-radius="5"]');
       if (defaultRadiusPill) defaultRadiusPill.classList.add('active');
       currentRadius = 5;
+
+      if (catSelect) catSelect.value = 'all';
+      currentCategory = 'all';
+      if (budgetSelect) budgetSelect.value = 'all';
+      currentBudget = 'all';
+      if (bhkSelect) bhkSelect.value = 'all';
+      currentBhk = 'all';
 
       const locInput = document.getElementById('mapLocInput');
       if (locInput) locInput.value = '';
@@ -291,7 +343,7 @@ function setupFilterEventListeners() {
 }
 
 /**
- * 5. LOCATION AUTOCOMPLETE & NOMINATIM GEOCODING
+ * 5. LOCATION AUTOCOMPLETE & GEOCODING
  */
 function setupLocationAutocomplete() {
   const inputEl = document.getElementById('mapLocInput');
@@ -359,27 +411,6 @@ async function fetchLocationSuggestions(query) {
       });
     }
 
-    if (suggestions.length < 3) {
-      try {
-        const nomRes = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=4`);
-        const nomData = await nomRes.json();
-        if (Array.isArray(nomData)) {
-          nomData.forEach(item => {
-            const cleanName = item.display_name.split(',').slice(0, 3).join(',');
-            if (!suggestions.some(s => s.name.toLowerCase().includes(item.name.toLowerCase()))) {
-              suggestions.push({
-                name: cleanName,
-                locality: item.name,
-                lat: parseFloat(item.lat),
-                lng: parseFloat(item.lon),
-                isGeocoded: true
-              });
-            }
-          });
-        }
-      } catch (e) {}
-    }
-
     if (suggestions.length === 0) {
       dropdownEl.innerHTML = `
         <div class="map-autocomplete-item" onclick="geocodeAndSearch('${query.replace(/'/g, "\\'")}')">
@@ -396,7 +427,7 @@ async function fetchLocationSuggestions(query) {
         <div class="map-autocomplete-icon"><i class="fas fa-map-marker-alt"></i></div>
         <div class="map-autocomplete-text">
           ${escapeHtml(s.name)}
-          ${s.count ? `<span class="map-autocomplete-sub">${s.count} verified listings</span>` : ''}
+          ${s.property_count ? `<span class="map-autocomplete-sub">${s.property_count} verified listings</span>` : ''}
         </div>
       </div>
     `).join('');
@@ -407,91 +438,77 @@ async function fetchLocationSuggestions(query) {
   }
 }
 
-async function selectLocationSuggestion(name, lat, lng) {
+window.selectLocationSuggestion = async function(name, lat, lng) {
   const inputEl = document.getElementById('mapLocInput');
   const dropdownEl = document.getElementById('mapAutocompleteList');
   if (inputEl) inputEl.value = name;
   if (dropdownEl) dropdownEl.style.display = 'none';
 
-  if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng)) {
+  if (lat !== null && lng !== null && !isNaN(lat) && !isNaN(lng) && lat !== 0) {
     await performLocationSearch(lat, lng, name, true);
   } else {
     await geocodeAndSearch(name);
   }
-}
+};
 
-async function geocodeAndSearch(query) {
+window.geocodeAndSearch = async function(query) {
   const dropdownEl = document.getElementById('mapAutocompleteList');
   if (dropdownEl) dropdownEl.style.display = 'none';
 
-  const knownLocs = {
-    'peelamedu': { lat: 11.0267, lng: 77.0028, name: 'Peelamedu, Coimbatore' },
-    'rs puram': { lat: 11.0098, lng: 76.9492, name: 'RS Puram, Coimbatore' },
-    'r.s. puram': { lat: 11.0098, lng: 76.9492, name: 'RS Puram, Coimbatore' },
-    'gandhipuram': { lat: 11.0185, lng: 76.9678, name: 'Gandhipuram, Coimbatore' },
-    'saravanampatti': { lat: 11.0825, lng: 76.9961, name: 'Saravanampatti, Coimbatore' },
-    'race course': { lat: 11.0016, lng: 76.9740, name: 'Race Course, Coimbatore' },
-    'singanallur': { lat: 11.0024, lng: 77.0195, name: 'Singanallur, Coimbatore' },
-    'vadavalli': { lat: 11.0125, lng: 76.8920, name: 'Vadavalli, Coimbatore' },
-    'avinashi road': { lat: 11.0380, lng: 77.0390, name: 'Avinashi Road, Coimbatore' },
-    'tidel park': { lat: 11.0310, lng: 77.0320, name: 'TIDEL Park, Coimbatore' },
-    'coimbatore': { lat: 11.0168, lng: 76.9558, name: 'Coimbatore, Tamil Nadu' }
-  };
-
-  const qLower = query.toLowerCase().trim();
-  for (const [key, val] of Object.entries(knownLocs)) {
-    if (qLower.includes(key)) {
-      await performLocationSearch(val.lat, val.lng, val.name, true);
-      return;
-    }
-  }
-
   try {
-    const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`);
+    // Forward geocode via backend geocoding service (Nominatim + regional fallback)
+    const res = await fetch(`/api/search/geocode?q=${encodeURIComponent(query)}`);
     const data = await res.json();
 
-    if (Array.isArray(data) && data.length > 0) {
-      const best = data[0];
-      const lat = parseFloat(best.lat);
-      const lng = parseFloat(best.lon);
-      const cleanName = best.display_name.split(',').slice(0, 3).join(', ');
-      await performLocationSearch(lat, lng, cleanName, true);
+    if (data.success && data.lat && data.lng) {
+      await performLocationSearch(data.lat, data.lng, data.display_name || query, true);
     } else {
-      currentLocation.name = query;
-      await loadProperties();
-      await loadLocationIntelligence();
+      showGeoAlert(`Could not geocode "${query}". Searching default area.`);
+      await performLocationSearch(11.0168, 76.9558, query, true);
     }
   } catch (err) {
-    console.warn('Geocoding failed, falling back:', err);
-    await loadProperties();
+    console.warn('Geocoding search failed:', err);
+    await performLocationSearch(11.0168, 76.9558, query, true);
   }
-}
+};
 
 /**
  * 6. PERFORM LOCATION SEARCH & UPDATE ALL PLATFORM PANELS
  */
 async function performLocationSearch(lat, lng, locationName, shouldFly = true) {
+  const numLat = parseFloat(lat);
+  const numLng = parseFloat(lng);
+
   currentLocation = {
     name: locationName,
     locality: locationName.split(',')[0].trim(),
     city: 'Coimbatore',
-    lat: lat,
-    lng: lng
+    lat: numLat,
+    lng: numLng
   };
 
   isViewportSearch = false;
 
   const inputEl = document.getElementById('mapLocInput');
-  if (inputEl && !inputEl.value) {
+  if (inputEl && document.activeElement !== inputEl) {
     inputEl.value = locationName;
   }
 
-  updateRadiusCircle(lat, lng, currentRadius);
+  // Update Detected Coordinates Badge (Read-only for system use)
+  const latEl = document.getElementById('detectedLatText');
+  const lngEl = document.getElementById('detectedLngText');
+  if (latEl) latEl.textContent = numLat.toFixed(4);
+  if (lngEl) lngEl.textContent = numLng.toFixed(4);
+
+  const locNameText = document.getElementById('intelLocNameText');
+  if (locNameText) locNameText.textContent = locationName;
+
+  updateRadiusCircle(numLat, numLng, currentRadius);
 
   if (mapInstance && shouldFly) {
-    mapInstance.flyTo([lat, lng], 14, { duration: 1.2 });
+    mapInstance.flyTo([numLat, numLng], 14, { duration: 1.0 });
   } else if (mapInstance) {
-    mapInstance.setView([lat, lng], 13);
+    mapInstance.setView([numLat, numLng], 13);
   }
 
   // Parallel data loading
@@ -543,7 +560,7 @@ function updateRadiusCircle(lat, lng, radiusKm) {
 }
 
 /**
- * 8. LOAD PROPERTIES FROM MYSQL BACKEND
+ * 8. LOAD PROPERTIES FROM MYSQL BACKEND (GEOGRAPHIC RADIUS FILTER)
  */
 async function loadProperties() {
   const cardsContainer = document.getElementById('mapCardsContainer');
@@ -551,21 +568,31 @@ async function loadProperties() {
     cardsContainer.innerHTML = `
       <div style="text-align: center; padding: 3rem 1.5rem;">
         <i class="fas fa-spinner fa-spin text-brand" style="font-size: 2rem;"></i>
-        <p class="text-secondary" style="margin-top: 0.75rem; font-weight: 600;">Searching verified listings...</p>
+        <p class="text-secondary" style="margin-top: 0.75rem; font-weight: 600;">Searching verified listings within ${currentRadius} km...</p>
       </div>
     `;
   }
 
   try {
-    let url = `/api/properties/nearby?lat=${currentLocation.lat}&lng=${currentLocation.lng}&radius=${currentRadius}&limit=50`;
-
-    if (isViewportSearch && mapInstance) {
-      const bounds = mapInstance.getBounds();
-      url = `/api/properties?limit=50&min_lat=${bounds.getSouth()}&max_lat=${bounds.getNorth()}&min_lng=${bounds.getWest()}&max_lng=${bounds.getEast()}`;
-    }
+    let url = `/api/properties/nearby?lat=${currentLocation.lat}&lng=${currentLocation.lng}&radius=${currentRadius}&limit=100`;
 
     if (currentType && currentType !== 'all') {
-      url += `&type=${currentType}`;
+      url += `&type=${encodeURIComponent(currentType)}`;
+    }
+    if (currentCategory && currentCategory !== 'all') {
+      url += `&category=${encodeURIComponent(currentCategory)}`;
+    }
+    if (currentBhk && currentBhk !== 'all') {
+      url += `&bhk=${encodeURIComponent(currentBhk)}`;
+    }
+
+    // Budget range mapping
+    if (currentBudget && currentBudget !== 'all') {
+      if (currentBudget === 'rent_under_20k') url += `&max_price=20000`;
+      else if (currentBudget === 'rent_under_40k') url += `&max_price=40000`;
+      else if (currentBudget === 'buy_under_50l') url += `&max_price=5000000`;
+      else if (currentBudget === 'buy_under_1cr') url += `&max_price=10000000`;
+      else if (currentBudget === 'buy_above_1cr') url += `&min_price=10000000`;
     }
 
     const res = await fetch(url);
@@ -573,11 +600,13 @@ async function loadProperties() {
 
     if (result.success && result.data) {
       activeProperties = result.data.properties || [];
+      recommendedProperties = result.data.recommended_properties || [];
       const typeSummary = result.data.type_summary || {};
 
       updateTypeCountBadges(typeSummary, activeProperties);
       updateLocationSummaryBanner(activeProperties.length, typeSummary);
       renderMapMarkers(activeProperties);
+      renderRecommendations(recommendedProperties);
       renderPropertyCards(activeProperties);
     } else {
       renderEmptyState();
@@ -589,17 +618,278 @@ async function loadProperties() {
 }
 
 /**
- * 9. LOAD LOCATION INTELLIGENCE & LIFESCORE RADAR
+ * 9. RENDER "RECOMMENDED NEAR YOU" CAROUSEL/SECTION
+ */
+function renderRecommendations(recs) {
+  const section = document.getElementById('recommendedNearYouSection');
+  const container = document.getElementById('recommendedCardsContainer');
+  if (!section || !container) return;
+
+  if (!recs || recs.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+
+  section.style.display = 'block';
+  container.innerHTML = recs.slice(0, 3).map((p, idx) => {
+    const lat = Number(p.lat || p.latitude);
+    const lng = Number(p.lng || p.longitude);
+    const priceDisplay = formatPrice(p.price, p.type);
+    const imgSrc = p.primary_image || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80';
+
+    return `
+      <div class="map-prop-preview-card" 
+           id="card-rec-${p.id}"
+           style="border-left: 3px solid var(--accent-amber); background: linear-gradient(135deg, rgba(245, 158, 11, 0.04) 0%, #ffffff 100%);"
+           onclick="focusPropertyOnMap(${p.id}, ${lat}, ${lng})">
+        <div style="display: flex; gap: 0.85rem;">
+          <div class="card-thumbnail-wrap" style="width: 100px; height: 80px;">
+            <img src="${imgSrc}" class="card-thumbnail-img" alt="${escapeHtml(p.title)}" loading="lazy">
+            <span class="card-type-tag" style="background: #d97706; font-size: 0.65rem;">#${idx + 1} MATCH</span>
+          </div>
+          <div class="card-content-wrap" style="flex: 1;">
+            <div class="card-price-row">
+              <span class="card-price-text" style="font-size: 0.95rem;">${priceDisplay}</span>
+              <span class="card-distance-pill" style="font-size: 0.72rem; color: #059669; font-weight: 700;">
+                <i class="fas fa-location-arrow"></i> ${p.distance_km} km
+              </span>
+            </div>
+            <h4 class="card-title-text" style="font-size: 0.85rem;" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</h4>
+            <div style="display: flex; gap: 0.35rem; margin-top: 0.25rem;">
+              <span class="card-score-pill score-trust" style="font-size: 0.65rem;"><i class="fas fa-shield-alt"></i> Trust ${p.trust_score || 92}</span>
+              <span class="card-score-pill score-green" style="font-size: 0.65rem;"><i class="fas fa-leaf"></i> Green ${p.green_score || 88}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * 10. RENDER MAP MARKERS & POPUPS AT PROPERTY COORDINATES
+ */
+function renderMapMarkers(properties) {
+  if (!mapInstance || !markersLayer) return;
+
+  markersLayer.clearLayers();
+  propertyMarkersMap.clear();
+
+  properties.forEach(p => {
+    const lat = Number(p.lat || p.latitude);
+    const lng = Number(p.lng || p.longitude);
+
+    if (!lat || !lng || isNaN(lat) || isNaN(lng) || lat === 0) return;
+
+    let pinClass = 'pin-sale';
+    let pinIcon = 'fa-home';
+    let typeBadgeLabel = 'FOR SALE';
+    let typeBadgeClass = 'tag-sale';
+
+    if (p.type === 'rent') {
+      pinClass = 'pin-rent';
+      pinIcon = 'fa-key';
+      typeBadgeLabel = 'FOR RENT';
+      typeBadgeClass = 'tag-rent';
+    } else if (p.type === 'lease') {
+      pinClass = 'pin-lease';
+      pinIcon = 'fa-building';
+      typeBadgeLabel = 'FOR LEASE';
+      typeBadgeClass = 'tag-lease';
+    }
+
+    const priceDisplay = formatPrice(p.price, p.type);
+    const imgSrc = p.primary_image || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80';
+
+    const markerIcon = L.divIcon({
+      className: 'homesphere-pin-marker',
+      html: `
+        <div class="custom-pin ${pinClass}" id="pin-marker-${p.id}">
+          <i class="fas ${pinIcon}"></i>
+        </div>
+      `,
+      iconSize: [36, 36],
+      iconAnchor: [18, 36],
+      popupAnchor: [0, -36]
+    });
+
+    const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(markersLayer);
+
+    const popupHtml = `
+      <div class="popup-card-inner">
+        <div class="popup-img-wrap">
+          <img src="${imgSrc}" class="popup-img" alt="${escapeHtml(p.title)}">
+          <span class="popup-type-tag ${typeBadgeClass}">${typeBadgeLabel}</span>
+        </div>
+        <div class="popup-body">
+          <div class="popup-price">${priceDisplay}</div>
+          <h4 class="popup-title" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</h4>
+          <div class="popup-loc"><i class="fas fa-map-marker-alt text-brand"></i> ${escapeHtml(p.address || '')}${p.address ? ', ' : ''}${escapeHtml(p.city)}</div>
+          
+          <div class="popup-specs">
+            <span><i class="fas fa-bed"></i> ${p.bhk || p.bedrooms || 1} BHK</span>
+            <span><i class="fas fa-bath"></i> ${p.bathrooms || 1} Bath</span>
+            <span><i class="fas fa-location-arrow text-emerald"></i> ${p.distance_km || '0.0'} km</span>
+          </div>
+
+          <div class="popup-scores">
+            <span class="card-score-pill score-trust"><i class="fas fa-shield-alt"></i> Trust: ${p.trust_score || 90}/100</span>
+            <span class="card-score-pill score-green"><i class="fas fa-leaf"></i> Green: ${p.green_score || 85}/100</span>
+          </div>
+
+          <a href="/property-details.html?id=${p.id}" class="popup-btn-view" target="_blank">
+            View Property Details →
+          </a>
+        </div>
+      </div>
+    `;
+
+    marker.bindPopup(popupHtml, { maxWidth: 300 });
+
+    marker.on('click', () => {
+      highlightPropertyCard(p.id);
+    });
+
+    propertyMarkersMap.set(p.id, marker);
+  });
+}
+
+/**
+ * 11. RENDER PROPERTY CARDS IN SIDEBAR
+ */
+function renderPropertyCards(properties) {
+  const cardsContainer = document.getElementById('mapCardsContainer');
+  if (!cardsContainer) return;
+
+  if (properties.length === 0) {
+    renderEmptyState();
+    return;
+  }
+
+  cardsContainer.innerHTML = properties.map(p => {
+    const lat = Number(p.lat || p.latitude);
+    const lng = Number(p.lng || p.longitude);
+
+    const priceDisplay = formatPrice(p.price, p.type);
+    const defaultImg = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80';
+    const imgSrc = p.primary_image || defaultImg;
+
+    let typeTagClass = 'tag-sale';
+    let typeTagLabel = 'FOR SALE';
+    if (p.type === 'rent') {
+      typeTagClass = 'tag-rent';
+      typeTagLabel = 'FOR RENT';
+    } else if (p.type === 'lease') {
+      typeTagClass = 'tag-lease';
+      typeTagLabel = 'FOR LEASE';
+    }
+
+    return `
+      <div class="map-prop-preview-card" 
+           id="card-prop-${p.id}" 
+           onclick="focusPropertyOnMap(${p.id}, ${lat}, ${lng})">
+        
+        <div style="display: flex; gap: 0.95rem;">
+          
+          <!-- Image Thumbnail -->
+          <div class="card-thumbnail-wrap">
+            <img src="${imgSrc}" class="card-thumbnail-img" alt="${escapeHtml(p.title)}" loading="lazy">
+            <span class="card-type-tag ${typeTagClass}">${typeTagLabel}</span>
+          </div>
+
+          <!-- Content -->
+          <div class="card-content-wrap">
+            
+            <div class="card-price-row">
+              <span class="card-price-text">${priceDisplay}</span>
+              ${p.distance_km !== null && p.distance_km !== undefined 
+                ? `<span class="card-distance-pill"><i class="fas fa-location-arrow"></i> ${p.distance_km} km away</span>` 
+                : ''}
+            </div>
+
+            <h4 class="card-title-text" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</h4>
+            
+            <div class="card-loc-text">
+              <i class="fas fa-map-marker-alt text-brand"></i> ${escapeHtml(p.address || '')}${p.address ? ', ' : ''}${escapeHtml(p.city)}
+            </div>
+
+            <div class="card-specs-row">
+              <span><i class="fas fa-bed"></i> ${p.bhk || p.bedrooms || 1} BHK</span>
+              <span>•</span>
+              <span><i class="fas fa-bath"></i> ${p.bathrooms || 1} Bath</span>
+              <span>•</span>
+              <span><i class="fas fa-vector-square"></i> ${p.area_sqft || 1000} sq.ft</span>
+            </div>
+
+            <div class="card-footer-row">
+              <div style="display: flex; gap: 0.35rem;">
+                <span class="card-score-pill score-trust"><i class="fas fa-shield-alt"></i> Trust ${p.trust_score || 90}</span>
+                <span class="card-score-pill score-green"><i class="fas fa-leaf"></i> Green ${p.green_score || 85}</span>
+              </div>
+              <a href="/property-details.html?id=${p.id}" class="card-details-link" target="_blank" onclick="event.stopPropagation();">
+                Details →
+              </a>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    `;
+  }).join('');
+}
+
+/**
+ * 12. SYNCHRONIZATION: CARD CLICK -> MAP FOCUS & POPUP
+ */
+window.focusPropertyOnMap = function(propertyId, lat, lng) {
+  activePropertyId = propertyId;
+
+  document.querySelectorAll('.map-prop-preview-card').forEach(c => c.classList.remove('selected'));
+  const targetCard = document.getElementById(`card-prop-${propertyId}`);
+  if (targetCard) targetCard.classList.add('selected');
+
+  const marker = propertyMarkersMap.get(propertyId);
+  if (marker && mapInstance) {
+    document.querySelectorAll('.custom-pin').forEach(pin => pin.classList.remove('highlighted'));
+    const pinEl = document.getElementById(`pin-marker-${propertyId}`);
+    if (pinEl) pinEl.classList.add('highlighted');
+
+    mapInstance.flyTo([lat, lng], 15, { duration: 0.8 });
+    setTimeout(() => {
+      marker.openPopup();
+    }, 400);
+  }
+};
+
+/**
+ * 13. SYNCHRONIZATION: MARKER CLICK -> SCROLL & HIGHLIGHT CARD
+ */
+function highlightPropertyCard(propertyId) {
+  activePropertyId = propertyId;
+
+  document.querySelectorAll('.map-prop-preview-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById(`card-prop-${propertyId}`);
+  if (card) {
+    card.classList.add('selected');
+    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  document.querySelectorAll('.custom-pin').forEach(pin => pin.classList.remove('highlighted'));
+  const pinEl = document.getElementById(`pin-marker-${propertyId}`);
+  if (pinEl) pinEl.classList.add('highlighted');
+}
+
+/**
+ * 14. LOAD LOCATION INTELLIGENCE & LIFESCORE RADAR
  */
 async function loadLocationIntelligence() {
-  const intelLocText = document.getElementById('intelLocNameText');
   const intelPropCount = document.getElementById('intelPropCount');
   const intelAvgPrice = document.getElementById('intelAvgPrice');
   const intelAvgRent = document.getElementById('intelAvgRent');
   const intelTransportRating = document.getElementById('intelTransportRating');
   const intelBadge = document.getElementById('intelLifeScoreBadge');
-
-  if (intelLocText) intelLocText.textContent = currentLocation.name;
 
   try {
     const res = await fetch(`/api/properties/location-intelligence?lat=${currentLocation.lat}&lng=${currentLocation.lng}&radius=${currentRadius}&locality=${encodeURIComponent(currentLocation.locality)}`);
@@ -624,7 +914,6 @@ async function loadLocationIntelligence() {
         intelBadge.className = lifeScore.overallScore >= 8.8 ? 'score-pill green' : (lifeScore.overallScore >= 7.5 ? 'score-pill trust' : 'score-pill life');
       }
 
-      // Draw Canvas Radar Chart
       drawMapLifeScoreRadar(lifeScore);
       renderLifeScoreMiniBars(lifeScore);
     }
@@ -634,7 +923,7 @@ async function loadLocationIntelligence() {
 }
 
 /**
- * 10. DRAW CANVAS 2D RADAR CHART FOR SELECTED LOCATION
+ * 15. DRAW CANVAS 2D RADAR CHART FOR SELECTED LOCATION
  */
 function drawMapLifeScoreRadar(scores) {
   const canvas = document.getElementById('mapLifeScoreRadarCanvas');
@@ -758,7 +1047,7 @@ function renderLifeScoreMiniBars(scores) {
 }
 
 /**
- * 11. NEARBY AMENITIES / CIVIC FACILITIES LAYER (OVERPASS / REAL OSM)
+ * 16. NEARBY AMENITIES / CIVIC FACILITIES LAYER
  */
 function setupAmenitiesToggle() {
   const btnToggle = document.getElementById('btnAmenitiesToggle');
@@ -779,7 +1068,6 @@ function setupAmenitiesToggle() {
       }
     });
 
-    // Amenity Chips
     const chips = dropdown.querySelectorAll('.amenity-chip-item');
     chips.forEach(chip => {
       chip.addEventListener('click', async () => {
@@ -805,7 +1093,6 @@ async function renderNearbyAmenities() {
   const lat = currentLocation.lat;
   const lng = currentLocation.lng;
 
-  // Curated database of verified Coimbatore landmarks / OSM amenities
   const verifiedAmenities = [
     { type: 'hospital', name: 'PSG Multi-Specialty Hospital', lat: 11.0255, lng: 77.0040, icon: '🏥', color: '#ef4444' },
     { type: 'hospital', name: 'G. Kuppuswamy Naidu Hospital', lat: 11.0142, lng: 76.9780, icon: '🏥', color: '#ef4444' },
@@ -828,11 +1115,9 @@ async function renderNearbyAmenities() {
     { type: 'restaurant', name: 'Anandhaas Pure Veg Restaurant', lat: 11.0190, lng: 76.9690, icon: '🍽️', color: '#ea580c' }
   ];
 
-  // Filter amenities within current distance radius and matching selected categories
   verifiedAmenities.forEach(am => {
     if (!activeAmenities.has(am.type)) return;
 
-    // Haversine distance check
     const dKm = 6371 * Math.acos(
       Math.min(1.0, Math.max(-1.0,
         Math.cos(lat * Math.PI / 180) * Math.cos(am.lat * Math.PI / 180) * Math.cos((am.lng - lng) * Math.PI / 180) +
@@ -865,222 +1150,7 @@ async function renderNearbyAmenities() {
 }
 
 /**
- * 12. RENDER MAP MARKERS & POPUPS
- */
-function renderMapMarkers(properties) {
-  if (!mapInstance || !markersLayer) return;
-
-  markersLayer.clearLayers();
-  propertyMarkersMap.clear();
-
-  properties.forEach(p => {
-    const lat = Number(p.lat || p.latitude);
-    const lng = Number(p.lng || p.longitude);
-
-    if (!lat || !lng || isNaN(lat) || isNaN(lng) || lat === 0) return;
-
-    let pinClass = 'pin-sale';
-    let pinIcon = 'fa-home';
-    let typeBadgeLabel = 'FOR SALE';
-    let typeBadgeClass = 'tag-sale';
-
-    if (p.type === 'rent') {
-      pinClass = 'pin-rent';
-      pinIcon = 'fa-key';
-      typeBadgeLabel = 'FOR RENT';
-      typeBadgeClass = 'tag-rent';
-    } else if (p.type === 'lease') {
-      pinClass = 'pin-lease';
-      pinIcon = 'fa-building';
-      typeBadgeLabel = 'FOR LEASE';
-      typeBadgeClass = 'tag-lease';
-    }
-
-    const priceDisplay = formatPrice(p.price, p.type);
-    const imgSrc = p.primary_image || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80';
-
-    const markerIcon = L.divIcon({
-      className: 'homesphere-pin-marker',
-      html: `
-        <div class="custom-pin ${pinClass}" id="pin-marker-${p.id}">
-          <i class="fas ${pinIcon}"></i>
-        </div>
-      `,
-      iconSize: [36, 36],
-      iconAnchor: [18, 36],
-      popupAnchor: [0, -36]
-    });
-
-    const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(markersLayer);
-
-    const popupHtml = `
-      <div class="popup-card-inner">
-        <div class="popup-img-wrap">
-          <img src="${imgSrc}" class="popup-img" alt="${escapeHtml(p.title)}">
-          <span class="popup-type-tag ${typeBadgeClass}">${typeBadgeLabel}</span>
-        </div>
-        <div class="popup-body">
-          <div class="popup-price">${priceDisplay}</div>
-          <h4 class="popup-title" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</h4>
-          <div class="popup-loc"><i class="fas fa-map-marker-alt text-brand"></i> ${escapeHtml(p.address || '')}${p.address ? ', ' : ''}${escapeHtml(p.city)}</div>
-          
-          <div class="popup-specs">
-            <span><i class="fas fa-bed"></i> ${p.bhk || p.bedrooms || 1} BHK</span>
-            <span><i class="fas fa-bath"></i> ${p.bathrooms || 1} Bath</span>
-            <span><i class="fas fa-vector-square"></i> ${p.area_sqft || 1000} sq.ft</span>
-          </div>
-
-          <div class="popup-scores">
-            <span class="card-score-pill score-trust"><i class="fas fa-shield-alt"></i> Trust: ${p.trust_score || 90}/100</span>
-            <span class="card-score-pill score-green"><i class="fas fa-leaf"></i> Green: ${p.green_score || 85}/100</span>
-          </div>
-
-          <a href="/property-details.html?id=${p.id}" class="popup-btn-view">
-            View Property Details →
-          </a>
-        </div>
-      </div>
-    `;
-
-    marker.bindPopup(popupHtml, { maxWidth: 300 });
-
-    marker.on('click', () => {
-      highlightPropertyCard(p.id);
-    });
-
-    propertyMarkersMap.set(p.id, marker);
-  });
-}
-
-/**
- * 13. RENDER PROPERTY CARDS IN SIDEBAR
- */
-function renderPropertyCards(properties) {
-  const cardsContainer = document.getElementById('mapCardsContainer');
-  if (!cardsContainer) return;
-
-  if (properties.length === 0) {
-    renderEmptyState();
-    return;
-  }
-
-  cardsContainer.innerHTML = properties.map(p => {
-    const lat = Number(p.lat || p.latitude);
-    const lng = Number(p.lng || p.longitude);
-
-    const priceDisplay = formatPrice(p.price, p.type);
-    const defaultImg = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=400&q=80';
-    const imgSrc = p.primary_image || defaultImg;
-
-    let typeTagClass = 'tag-sale';
-    let typeTagLabel = 'FOR SALE';
-    if (p.type === 'rent') {
-      typeTagClass = 'tag-rent';
-      typeTagLabel = 'FOR RENT';
-    } else if (p.type === 'lease') {
-      typeTagClass = 'tag-lease';
-      typeTagLabel = 'FOR LEASE';
-    }
-
-    return `
-      <div class="map-prop-preview-card" 
-           id="card-prop-${p.id}" 
-           onclick="focusPropertyOnMap(${p.id}, ${lat}, ${lng})">
-        
-        <div style="display: flex; gap: 0.95rem;">
-          
-          <!-- Image Thumbnail -->
-          <div class="card-thumbnail-wrap">
-            <img src="${imgSrc}" class="card-thumbnail-img" alt="${escapeHtml(p.title)}" loading="lazy">
-            <span class="card-type-tag ${typeTagClass}">${typeTagLabel}</span>
-          </div>
-
-          <!-- Content -->
-          <div class="card-content-wrap">
-            
-            <div class="card-price-row">
-              <span class="card-price-text">${priceDisplay}</span>
-              ${p.distance_km !== null && p.distance_km !== undefined 
-                ? `<span class="card-distance-pill"><i class="fas fa-location-arrow"></i> ${p.distance_km} km away</span>` 
-                : ''}
-            </div>
-
-            <h4 class="card-title-text" title="${escapeHtml(p.title)}">${escapeHtml(p.title)}</h4>
-            
-            <div class="card-loc-text">
-              <i class="fas fa-map-marker-alt text-brand"></i> ${escapeHtml(p.address || '')}${p.address ? ', ' : ''}${escapeHtml(p.city)}
-            </div>
-
-            <div class="card-specs-row">
-              <span><i class="fas fa-bed"></i> ${p.bhk || p.bedrooms || 1} BHK</span>
-              <span>•</span>
-              <span><i class="fas fa-bath"></i> ${p.bathrooms || 1} Bath</span>
-              <span>•</span>
-              <span><i class="fas fa-vector-square"></i> ${p.area_sqft || 1000} sq.ft</span>
-            </div>
-
-            <div class="card-footer-row">
-              <div style="display: flex; gap: 0.35rem;">
-                <span class="card-score-pill score-trust"><i class="fas fa-shield-alt"></i> Trust ${p.trust_score || 90}</span>
-                <span class="card-score-pill score-green"><i class="fas fa-leaf"></i> Green ${p.green_score || 85}</span>
-              </div>
-              <a href="/property-details.html?id=${p.id}" class="card-details-link" onclick="event.stopPropagation();">
-                Details →
-              </a>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-    `;
-  }).join('');
-}
-
-/**
- * 14. SYNCHRONIZATION: CARD CLICK -> MAP FOCUS & POPUP
- */
-function focusPropertyOnMap(propertyId, lat, lng) {
-  activePropertyId = propertyId;
-
-  document.querySelectorAll('.map-prop-preview-card').forEach(c => c.classList.remove('selected'));
-  const targetCard = document.getElementById(`card-prop-${propertyId}`);
-  if (targetCard) targetCard.classList.add('selected');
-
-  const marker = propertyMarkersMap.get(propertyId);
-  if (marker && mapInstance) {
-    document.querySelectorAll('.custom-pin').forEach(pin => pin.classList.remove('highlighted'));
-    const pinEl = document.getElementById(`pin-marker-${propertyId}`);
-    if (pinEl) pinEl.classList.add('highlighted');
-
-    mapInstance.flyTo([lat, lng], 15, { duration: 0.8 });
-    setTimeout(() => {
-      marker.openPopup();
-    }, 400);
-  }
-}
-
-/**
- * 15. SYNCHRONIZATION: MARKER CLICK -> SCROLL & HIGHLIGHT CARD
- */
-function highlightPropertyCard(propertyId) {
-  activePropertyId = propertyId;
-
-  document.querySelectorAll('.map-prop-preview-card').forEach(c => c.classList.remove('selected'));
-  const card = document.getElementById(`card-prop-${propertyId}`);
-  if (card) {
-    card.classList.add('selected');
-    card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  }
-
-  document.querySelectorAll('.custom-pin').forEach(pin => pin.classList.remove('highlighted'));
-  const pinEl = document.getElementById(`pin-marker-${propertyId}`);
-  if (pinEl) pinEl.classList.add('highlighted');
-}
-
-/**
- * 16. UPDATE UI COUNT BADGES & LOCATION SUMMARY
+ * 17. UPDATE UI COUNT BADGES & LOCATION SUMMARY
  */
 function updateTypeCountBadges(summary, properties) {
   const countAll = document.getElementById('chipCountAll');
@@ -1111,31 +1181,29 @@ function updateTypeCountBadges(summary, properties) {
 }
 
 function updateLocationSummaryBanner(count, summary) {
-  const locText = document.getElementById('summaryLocText');
   const countBadge = document.getElementById('summaryCountBadge');
+  const nearbyNum = document.getElementById('nearbyCountNum');
   const statRent = document.getElementById('summaryStatRent');
   const statBuy = document.getElementById('summaryStatBuy');
   const statLease = document.getElementById('summaryStatLease');
   const statRadius = document.getElementById('summaryStatRadius');
 
-  if (locText) {
-    locText.textContent = isViewportSearch ? 'Visible Map Viewport' : currentLocation.name;
-  }
   if (countBadge) {
     countBadge.textContent = `${count} ${count === 1 ? 'Property' : 'Properties'} Nearby`;
+  }
+  if (nearbyNum) {
+    nearbyNum.textContent = count;
   }
   if (statRent) statRent.innerHTML = `<i class="fas fa-key"></i> Rent: ${summary.rent || 0}`;
   if (statBuy) statBuy.innerHTML = `<i class="fas fa-home"></i> Buy: ${summary.buy || 0}`;
   if (statLease) statLease.innerHTML = `<i class="fas fa-building"></i> Lease: ${summary.lease || 0}`;
   if (statRadius) {
-    statRadius.innerHTML = isViewportSearch 
-      ? `<i class="fas fa-expand"></i> Custom Area` 
-      : `<i class="fas fa-compass"></i> Within ${currentRadius} km`;
+    statRadius.innerHTML = `<i class="fas fa-compass"></i> Within ${currentRadius} km`;
   }
 }
 
 /**
- * 17. "SEARCH THIS AREA" MAP DRAG LISTENER
+ * 18. "SEARCH THIS AREA" MAP DRAG LISTENER
  */
 function setupMapMovementListeners() {
   const btnSearchArea = document.getElementById('btnSearchThisArea');
@@ -1154,22 +1222,29 @@ function setupMapMovementListeners() {
 
   btnSearchArea.addEventListener('click', async () => {
     btnSearchArea.classList.remove('visible');
-    isViewportSearch = true;
     const center = mapInstance.getCenter();
-    currentLocation.lat = center.lat;
-    currentLocation.lng = center.lng;
-    currentLocation.name = `Map Viewport (${center.lat.toFixed(3)}, ${center.lng.toFixed(3)})`;
-    await loadProperties();
-    await loadLocationIntelligence();
-    await renderNearbyAmenities();
+    
+    // Reverse geocode the new center
+    let centerName = `Map Area (${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`;
+    try {
+      const revRes = await fetch(`/api/search/reverse-geocode?lat=${center.lat}&lng=${center.lng}`);
+      const revData = await revRes.json();
+      if (revData && revData.success && revData.display_name) {
+        centerName = revData.display_name;
+      }
+    } catch (e) {}
+
+    await performLocationSearch(center.lat, center.lng, centerName, false);
   });
 }
 
 /**
- * 18. EMPTY & ERROR STATES
+ * 19. EMPTY & ERROR STATES
  */
 function renderEmptyState() {
   const cardsContainer = document.getElementById('mapCardsContainer');
+  const recSection = document.getElementById('recommendedNearYouSection');
+  if (recSection) recSection.style.display = 'none';
   if (!cardsContainer) return;
 
   cardsContainer.innerHTML = `
@@ -1178,24 +1253,21 @@ function renderEmptyState() {
         <i class="fas fa-search-location"></i>
       </div>
       <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem;">
-        No properties found in this radius
+        No properties found within ${currentRadius} km
       </h3>
       <p class="text-secondary" style="font-size: 0.825rem; line-height: 1.4;">
-        We couldn't find active ${currentType !== 'all' ? currentType : ''} listings matching your current radius or filter settings.
+        No active listings match your current filters within ${currentRadius} km of ${escapeHtml(currentLocation.name)}.
       </p>
 
       <div style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 1.25rem;">
         <button type="button" class="btn btn-primary btn-sm" onclick="expandRadiusAction()">
           <i class="fas fa-expand-arrows-alt"></i> Expand Search Radius to 10 km
         </button>
-        ${currentType !== 'all' ? `
-          <button type="button" class="btn btn-outline btn-sm" onclick="resetTypeFilterAction()">
-            <i class="fas fa-tags"></i> View All Listing Types
+        ${currentType !== 'all' || currentCategory !== 'all' ? `
+          <button type="button" class="btn btn-outline btn-sm" onclick="resetFiltersAction()">
+            <i class="fas fa-tags"></i> Reset Filters
           </button>
         ` : ''}
-        <button type="button" class="btn btn-ghost btn-sm" onclick="searchAllCityAction()">
-          <i class="fas fa-city"></i> Explore Entire Coimbatore City
-        </button>
       </div>
     </div>
   `;
@@ -1222,17 +1294,13 @@ window.expandRadiusAction = async function() {
   if (pill10) pill10.click();
 };
 
-window.resetTypeFilterAction = async function() {
-  const allChip = document.querySelector('#listingTypeChips .type-chip[data-type="all"]');
-  if (allChip) allChip.click();
-};
-
-window.searchAllCityAction = async function() {
-  await performLocationSearch(11.0168, 76.9558, 'Coimbatore, Tamil Nadu', true);
+window.resetFiltersAction = async function() {
+  const btnReset = document.getElementById('btnResetFilters');
+  if (btnReset) btnReset.click();
 };
 
 /**
- * 19. MOBILE VIEW TOGGLE
+ * 20. MOBILE VIEW TOGGLE
  */
 function setupMobileToggle() {
   const toggleBtn = document.getElementById('mobileViewToggleBtn');
@@ -1262,7 +1330,7 @@ function setupMobileToggle() {
 }
 
 /**
- * 20. UTILITIES
+ * 21. UTILITIES
  */
 function formatPrice(price, type) {
   if (!price || isNaN(price)) return 'Price on Request';

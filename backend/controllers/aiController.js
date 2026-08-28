@@ -199,7 +199,8 @@ const getPropertyMatch = async (req, res, next) => {
 // 2. AI Home Advisor (Conversational Decision Engine with Full Property & Multi-Turn Context)
 const getAdvisorResponse = async (req, res, next) => {
   try {
-    const { query, propertyId, conversationHistory = [] } = req.body;
+    const { query, conversationHistory = [] } = req.body;
+    const propertyId = req.body.property_id || req.body.propertyId || req.query?.property_id || req.query?.propertyId || null;
 
     if (!query || query.trim() === '') {
       return res.status(400).json({ success: false, message: 'Query cannot be empty.' });
@@ -237,7 +238,7 @@ const getAdvisorResponse = async (req, res, next) => {
         const price = Number(propertyContext.price) || 0;
         const area = Number(propertyContext.area_sqft) || 1200;
         const isRent = propertyContext.type === 'rent' || propertyContext.type === 'lease';
-        const locLower = `${propertyContext.address || ''} ${propertyContext.city || ''}`.toLowerCase();
+        const locLower = `${propertyContext.address || ''} ${propertyContext.city || ''} ${propertyContext.locality || ''}`.toLowerCase();
 
         // Hidden costs
         const stampDuty = propertyContext.stamp_duty ? Number(propertyContext.stamp_duty) : Math.round(price * (isRent ? 0.01 : 0.07));
@@ -250,8 +251,9 @@ const getAdvisorResponse = async (req, res, next) => {
         let safety = 8.8, healthcare = 8.5, education = 8.9, transport = 8.6, dailyNeeds = 8.4, environment = 8.6;
         if (locLower.includes('peelamedu')) { safety = 9.2; healthcare = 8.9; education = 9.5; transport = 9.0; dailyNeeds = 8.8; environment = 8.4; }
         else if (locLower.includes('saravanampatti')) { safety = 8.9; healthcare = 8.3; education = 8.8; transport = 8.6; dailyNeeds = 8.5; environment = 8.7; }
-        else if (locLower.includes('rs puram')) { safety = 9.6; healthcare = 9.2; education = 9.3; transport = 8.9; dailyNeeds = 9.4; environment = 9.0; }
+        else if (locLower.includes('rs puram') || locLower.includes('r.s. puram')) { safety = 9.6; healthcare = 9.2; education = 9.3; transport = 8.9; dailyNeeds = 9.4; environment = 9.0; }
         else if (locLower.includes('race course')) { safety = 9.8; healthcare = 9.3; education = 9.2; transport = 9.1; dailyNeeds = 9.0; environment = 9.6; }
+        else if (locLower.includes('gandhipuram')) { safety = 9.0; healthcare = 9.1; education = 9.0; transport = 9.6; dailyNeeds = 9.5; environment = 8.2; }
         const lifeOverall = Number(((safety + healthcare + education + transport + dailyNeeds + environment) / 6).toFixed(1));
 
         // Capital forecast
@@ -287,7 +289,7 @@ const getAdvisorResponse = async (req, res, next) => {
       const basePriceFmt = formatInr(p.price, p.type);
       const trustScore = p.trust_score || 92;
 
-      // 1.1 "What are the hidden costs?" / "Hidden cost calculation"
+      // 1.1 Hidden Costs Breakdown
       if (qLower.includes('cost') || qLower.includes('hidden') || qLower.includes('outlay') || qLower.includes('fee') || qLower.includes('stamp') || qLower.includes('registration') || qLower.includes('maintenance')) {
         if (!a.isRent) {
           advisorReply = `### 💰 Hidden Cost Breakdown for **${p.title}**\n\n` +
@@ -317,8 +319,25 @@ const getAdvisorResponse = async (req, res, next) => {
         ];
       }
 
-      // 1.2 "How good is this locality?" / "Neighborhood LifeScore"
-      else if (qLower.includes('locality') || qLower.includes('neighborhood') || qLower.includes('area') || qLower.includes('location') || qLower.includes('safety') || qLower.includes('school') || qLower.includes('hospital') || qLower.includes('transit') || qLower.includes('lifescore')) {
+      // 1.2 Green Living & Sustainability
+      else if (qLower.includes('green') || qLower.includes('eco') || qLower.includes('solar') || qLower.includes('sustainab') || qLower.includes('energy')) {
+        const gScore = p.green_score_val || 85;
+        advisorReply = `### 🌿 Green Living Score Analysis for **${p.title}**\n\n` +
+          `This property holds a verified **Green Living Score of ${gScore}/100** (Energy Efficiency Rating: **A+**):\n\n` +
+          `* ☀️ **Solar Installation:** Rooftop photovoltaic array integrated with grid tie-in.\n` +
+          `* 🔋 **EV Mobility Readiness:** Dedicated EV charging point provision in parking bay.\n` +
+          `* 🌧️ **Water Conservation:** Rainwater harvesting recharge pit and dual-flush plumbing systems.\n` +
+          `* 🌱 **Carbon Offset:** Estimated **~4.2 tons of CO2 offset annually**.\n\n` +
+          `🎯 **AI Eco-Living Verdict:** Highly recommended for environmentally conscious residents looking to minimize recurring utility overheads.`;
+
+        quickActions = [
+          { text: 'Check Hidden Costs', prompt: 'What are the estimated hidden costs?' },
+          { text: 'Analyze Locality', prompt: 'How good is this locality?' }
+        ];
+      }
+
+      // 1.3 Locality & Neighborhood LifeScore
+      else if (qLower.includes('locality') || qLower.includes('neighborhood') || qLower.includes('area') || qLower.includes('location') || qLower.includes('safety') || qLower.includes('school') || qLower.includes('hospital') || qLower.includes('transit') || qLower.includes('lifescore') || qLower.includes('family')) {
         advisorReply = `### 📍 Locality LifeScore Intelligence: **${p.city || 'Coimbatore'}**\n\n` +
           `**${p.title}** in **${p.address ? p.address + ', ' : ''}${p.city}** holds an overall **Locality LifeScore of ${a.lifeOverall}/10** evaluated across 6 core urban parameters:\n\n` +
           `* 🛡️ **Safety (${a.safety}/10):** Low municipal incident rate with well-lit avenues and active community surveillance.\n` +
@@ -336,8 +355,8 @@ const getAdvisorResponse = async (req, res, next) => {
         ];
       }
 
-      // 1.3 "What will this property be worth in 5 years?" / "Capital appreciation"
-      else if (qLower.includes('5 years') || qLower.includes('5-year') || qLower.includes('growth') || qLower.includes('appreciation') || qLower.includes('cagr') || qLower.includes('forecast') || qLower.includes('worth in 5') || qLower.includes('future value') || qLower.includes('roi')) {
+      // 1.4 5-Year Capital Forecast
+      else if (qLower.includes('5 years') || qLower.includes('5-year') || qLower.includes('growth') || qLower.includes('appreciation') || qLower.includes('cagr') || qLower.includes('forecast') || qLower.includes('worth in 5') || qLower.includes('future value') || qLower.includes('roi') || qLower.includes('invest')) {
         advisorReply = `### 📈 5-Year Capital Forecast for **${p.title}**\n\n` +
           `Based on micro-market compounding momentum in **${p.city}**, here is the projected capital appreciation trajectory (estimated at **~${a.cagr}% CAGR**):\n\n` +
           `* **Current Property Value:** ${basePriceFmt}\n` +
@@ -355,7 +374,7 @@ const getAdvisorResponse = async (req, res, next) => {
         ];
       }
 
-      // 1.4 "Is this property worth buying?" / "Valuation Verdict"
+      // 1.5 Valuation Verdict & Buying Advice
       else if (qLower.includes('worth') || qLower.includes('should i buy') || qLower.includes('good buy') || qLower.includes('valuation') || qLower.includes('verdict') || qLower.includes('fair price') || qLower.includes('recommend this')) {
         const sqftRate = p.area_sqft > 0 ? Math.round(a.price / Number(p.area_sqft)) : null;
         const verdict = trustScore >= 88 && a.lifeOverall >= 8.5 ? 'Strong Buy Candidate' : 'Recommended with Standard Due Diligence';
@@ -380,7 +399,7 @@ const getAdvisorResponse = async (req, res, next) => {
         ];
       }
 
-      // 1.5 Legal & Title Verification
+      // 1.6 Legal & Title Verification
       else if (qLower.includes('legal') || qLower.includes('title') || qLower.includes('document') || qLower.includes('verify') || qLower.includes('trust') || qLower.includes('safe')) {
         advisorReply = `### 🛡️ Legal Verification & Property DNA for **${p.title}**\n\n` +
           `* **Trust Score:** **${trustScore}/100** (Verified)\n` +
@@ -398,7 +417,7 @@ const getAdvisorResponse = async (req, res, next) => {
         ];
       }
 
-      // 1.6 General property question fallback
+      // 1.7 General fallback with live property context
       else {
         advisorReply = `### 🏡 Evaluating **${p.title}** in ${p.city}\n\n` +
           `Here is the verified executive snapshot for this **${basePriceFmt}** listing:\n\n` +
@@ -418,188 +437,217 @@ const getAdvisorResponse = async (req, res, next) => {
     }
 
     // =========================================================================
-    // SCENARIO 2: GENERAL MARKET ADVICE OR DATABASE SEARCH QUERY
+    // SCENARIO 2: GENERAL MARKET ADVICE & ACTIVE DATABASE QUERY
     // =========================================================================
     else {
 
-      // 2.1 Multi-Turn Property Search / Discovery (e.g. "Find me a 2 BHK for rent in Peelamedu under 20000")
-      const isSearchIntent =
-        entities.isCheaperRequest ||
-        entities.isMoreOptionsRequest ||
-        qLower.includes('find') ||
-        qLower.includes('show') ||
-        qLower.includes('search') ||
-        qLower.includes('looking for') ||
-        qLower.includes('recommend') ||
-        qLower.includes('bhk') ||
-        qLower.includes('rent') ||
-        qLower.includes('buy') ||
-        qLower.includes('properties in') ||
-        qLower.includes('under') ||
-        qLower.includes('budget');
+      // 2.1 Family-Friendly / Schools & Healthcare Proximity Intent
+      if (qLower.includes('family') || qLower.includes('school') || qLower.includes('hospital') || qLower.includes('kids') || qLower.includes('children') || qLower.includes('healthcare')) {
+        const [familyProps] = await pool.query(
+          `SELECT p.*, COALESCE(ts.score, 85) as trust_score, COALESCE(ls.score, 90) as life_score, COALESCE(gs.score, 80) as green_score,
+                  (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
+           FROM properties p
+           LEFT JOIN trust_scores ts ON p.id = ts.property_id
+           LEFT JOIN life_scores ls ON p.id = ls.property_id
+           LEFT JOIN green_scores gs ON p.id = gs.property_id
+           WHERE p.status = 'active'
+           ORDER BY COALESCE(ls.score, 80) DESC, COALESCE(ts.score, 80) DESC
+           LIMIT 3`
+        );
 
-      if (isSearchIntent) {
-        let sql = `SELECT p.*,
-                          COALESCE(ts.score, 75) as trust_score,
-                          COALESCE(ls.score, 80) as life_score,
-                          COALESCE(gs.score, 70) as green_score,
-                          (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
-                   FROM properties p
-                   LEFT JOIN trust_scores ts ON p.id = ts.property_id
-                   LEFT JOIN life_scores ls ON p.id = ls.property_id
-                   LEFT JOIN green_scores gs ON p.id = gs.property_id
-                   WHERE p.status = 'active'`;
-        const params = [];
+        const listMarkdown = familyProps.map(m => {
+          const defaultImg = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80';
+          const img = m.primary_image || defaultImg;
+          return `#### 🏡 [${m.title}](/property-details.html?id=${m.id})\n` +
+                 `![${m.title}](${img})\n` +
+                 `* **Price:** **${formatInr(m.price, m.type)}** | **Location:** ${m.address ? m.address + ', ' : ''}${m.city}\n` +
+                 `* **Specs:** ${m.bedrooms ? m.bedrooms + ' BHK | ' : ''}${m.area_sqft ? Number(m.area_sqft).toLocaleString() + ' sq.ft | ' : ''}${m.property_type || 'Residential'}\n` +
+                 `* **Locality LifeScore:** **${m.life_score}/100** (Top School & Hospital Proximity) | **Trust Score:** **${m.trust_score}/100**\n` +
+                 `* 🔗 **[View Property Details →](/property-details.html?id=${m.id})**`;
+        }).join('\n\n---\n\n');
 
-        // Locality filter
-        if (entities.locality) {
-          sql += ` AND (p.city LIKE ? OR p.address LIKE ?)`;
-          params.push(`%${entities.locality}%`, `%${entities.locality}%`);
-        }
-
-        // Listing type filter (Rent vs Sale)
-        if (entities.listingType) {
-          if (entities.listingType === 'rent' || entities.listingType === 'lease') {
-            sql += ` AND (p.type = 'rent' OR p.type = 'lease')`;
-          } else if (entities.listingType === 'sale' || entities.listingType === 'buy') {
-            sql += ` AND (p.type = 'sale' || p.type = 'buy')`;
-          }
-        }
-
-        // Bedrooms / BHK filter
-        if (entities.bedrooms) {
-          sql += ` AND (p.bedrooms = ? OR p.bhk = ?)`;
-          params.push(entities.bedrooms, entities.bedrooms);
-        }
-
-        // Budget filter
-        if (entities.maxBudget) {
-          if (entities.isCheaperRequest) {
-            // For cheaper request, strictly search for properties under previous budget or lower tier
-            sql += ` AND p.price < ?`;
-            params.push(entities.maxBudget);
-          } else {
-            sql += ` AND p.price <= ?`;
-            params.push(entities.maxBudget);
-          }
-        }
-
-        // Property type filter
-        if (entities.propertyType) {
-          sql += ` AND (p.property_type = ? OR p.category = ?)`;
-          params.push(entities.propertyType, entities.propertyType);
-        }
-
-        sql += ` ORDER BY p.price ASC LIMIT 4`;
-
-        let [matchingProps] = await pool.query(sql, params);
-
-        // Fallback: If strict search found 0 results, relax criteria to closest matches in the locality
-        if ((!matchingProps || matchingProps.length === 0) && entities.locality) {
-          const [fallbackLoc] = await pool.query(
-            `SELECT p.*, COALESCE(ts.score, 75) as trust_score, COALESCE(ls.score, 80) as life_score, COALESCE(gs.score, 70) as green_score,
-                    (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
-             FROM properties p
-             LEFT JOIN trust_scores ts ON p.id = ts.property_id
-             LEFT JOIN life_scores ls ON p.id = ls.property_id
-             LEFT JOIN green_scores gs ON p.id = gs.property_id
-             WHERE p.status = 'active' AND (p.city LIKE ? OR p.address LIKE ?)
-             ORDER BY p.price ASC LIMIT 3`,
-            [`%${entities.locality}%`, `%${entities.locality}%`]
-          );
-          matchingProps = fallbackLoc;
-        }
-
-        if (matchingProps && matchingProps.length > 0) {
-          const listMarkdown = matchingProps.map(m => {
-            const defaultImg = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80';
-            const img = m.primary_image || defaultImg;
-            const priceDisplay = formatInr(m.price, m.type);
-            const specs = `${m.bedrooms ? m.bedrooms + ' BHK | ' : ''}${m.area_sqft ? Number(m.area_sqft).toLocaleString() + ' sq.ft | ' : ''}${m.property_type || m.category || 'Residential'}`;
-
-            return `#### 🏡 [${m.title}](/property-details.html?id=${m.id})\n` +
-                   `![${m.title}](${img})\n` +
-                   `* **Price:** **${priceDisplay}** | **Location:** ${m.address ? m.address + ', ' : ''}${m.city}\n` +
-                   `* **Specs:** ${specs}\n` +
-                   `* **Trust Score:** **${m.trust_score}/100** | **LifeScore:** **${m.life_score}/100**\n` +
-                   `* 🔗 **[View Property Details →](/property-details.html?id=${m.id})**`;
-          }).join('\n\n---\n\n');
-
-          const criteriaSummary = [
-            entities.bedrooms ? `${entities.bedrooms} BHK` : '',
-            entities.listingType ? (entities.listingType === 'rent' ? 'For Rent' : 'For Sale') : '',
-            entities.locality ? `in **${entities.locality}**` : '',
-            entities.maxBudget ? `under **${formatInr(entities.maxBudget)}**` : ''
-          ].filter(Boolean).join(' ');
-
-          advisorReply = `### 🔍 Verified Properties Matching Your Criteria\n\n` +
-            `I searched our live database ${criteriaSummary ? `for **${criteriaSummary}**` : ''} and found **${matchingProps.length} verified listings**:\n\n` +
-            listMarkdown + `\n\n` +
-            `💡 *Click **View Property Details** to inspect full legal compliance, or select a listing in the top dropdown to run in-depth analytics.*`;
-
-          quickActions = [
-            { text: 'I want something cheaper', prompt: 'I want something cheaper' },
-            { text: 'Show for Sale instead', prompt: `Show me ${entities.bedrooms ? entities.bedrooms + ' BHK ' : ''}properties for sale in ${entities.locality || 'Coimbatore'}` },
-            { text: 'Best Investment Options', prompt: 'What are the best investment properties in Coimbatore?' }
-          ];
-        } else {
-          const [topAll] = await pool.query(
-            `SELECT p.*, COALESCE(ts.score, 75) as trust_score, COALESCE(ls.score, 80) as life_score,
-                    (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
-             FROM properties p
-             LEFT JOIN trust_scores ts ON p.id = ts.property_id
-             LEFT JOIN life_scores ls ON p.id = ls.property_id
-             WHERE p.status = 'active'
-             ORDER BY p.id ASC LIMIT 3`
-          );
-
-          const listStr = topAll.map(m => `* **[${m.title}](/property-details.html?id=${m.id})** — ${formatInr(m.price, m.type)} in ${m.city}`).join('\n');
-
-          advisorReply = `I searched our database for listings matching your criteria. While no exact records matched all filters simultaneously, here are top verified listings on HomeSphere:\n\n` +
-            listStr + `\n\n` +
-            `You can also [Browse All Properties on Live Map](/map-search.html) to adjust your radius and filters.`;
-
-          quickActions = [
-            { text: 'Show Properties in Peelamedu', prompt: 'Find properties in Peelamedu' },
-            { text: 'Show 2 BHK for Rent', prompt: 'Find 2 BHK for rent in Coimbatore' },
-            { text: 'Under 50 Lakhs', prompt: 'Find properties under 50 Lakhs' }
-          ];
-        }
-      }
-
-      // 2.2 Top Localities in Coimbatore
-      else if (qLower.includes('location in coimbatore') || qLower.includes('good area') || qLower.includes('best place') || qLower.includes('localities in coimbatore') || qLower.includes('where to buy')) {
-        advisorReply = `### 📍 Top Residential & Investment Localities in Coimbatore\n\n` +
-          `1. **Peelamedu & Avinashi Road (Established Educational & Transit Corridor):**\n` +
-          `   - Ideal for: Families & healthcare professionals.\n` +
-          `   - Highlights: Proximity to Airport, PSG CAS & Tech, KMCH, and high capital liquidity (~7.2% CAGR).\n\n` +
-          `2. **Saravanampatti (IT SEZ Corridor & High Rental Yield):**\n` +
-          `   - Ideal for: Tech professionals & rental investors.\n` +
-          `   - Highlights: Rapid infrastructure expansion, tech parks, and strong rental yields (~7.8% CAGR).\n\n` +
-          `3. **RS Puram & Race Course (Ultra-Luxury Residential Core):**\n` +
-          `   - Ideal for: Heritage living & long-term wealth preservation.\n` +
-          `   - Highlights: Highest safety index (9.6/10), tree-lined avenues, and premium lifestyle conveniences.\n\n` +
-          `4. **Vadavalli & Thudiyalur (Scenic Emerging Suburbs):**\n` +
-          `   - Ideal for: Independent houses, villas, and peaceful residential retirement living.`;
+        advisorReply = `### 👨‍👩‍👧‍👦 Top Family-Friendly Properties with High School & Healthcare Access\n\n` +
+          `For families prioritizing **neighborhood safety**, **top CBSE/ICSE schools**, and **multi-specialty hospitals**, here are the top-rated verified active properties in Coimbatore:\n\n` +
+          listMarkdown + `\n\n` +
+          `💡 **AI Family Advisory:** Localities like **Peelamedu**, **RS Puram**, and **Saravanampatti** consistently rank highest in pediatric healthcare proximity and school bus routes.`;
 
         quickActions = [
           { text: 'Properties in Peelamedu', prompt: 'Find properties in Peelamedu' },
-          { text: 'Properties in Saravanampatti', prompt: 'Find properties in Saravanampatti' },
-          { text: 'Luxury in RS Puram', prompt: 'Find properties in RS Puram' }
+          { text: 'Properties in RS Puram', prompt: 'Find properties in RS Puram' },
+          { text: 'Check Buy vs Rent', prompt: 'Should I rent or buy?' }
         ];
       }
 
-      // 2.3 Buy vs Rent Financial Framework
-      else if (qLower.includes('buy vs rent') || qLower.includes('rent vs buy') || qLower.includes('rent or buy') || qLower.includes('buy or rent')) {
+      // 2.2 Investment & Highest ROI / Capital Growth Intent
+      else if (qLower.includes('invest') || qLower.includes('roi') || qLower.includes('return') || qLower.includes('capital growth') || qLower.includes('growth') || qLower.includes('rental yield') || qLower.includes('appreciation')) {
+        const [investProps] = await pool.query(
+          `SELECT p.*, COALESCE(ts.score, 85) as trust_score, COALESCE(ls.score, 85) as life_score,
+                  (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
+           FROM properties p
+           LEFT JOIN trust_scores ts ON p.id = ts.property_id
+           LEFT JOIN life_scores ls ON p.id = ls.property_id
+           WHERE p.status = 'active'
+           ORDER BY p.price ASC, COALESCE(ts.score, 80) DESC
+           LIMIT 3`
+        );
+
+        const listMarkdown = investProps.map(m => {
+          const defaultImg = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80';
+          const img = m.primary_image || defaultImg;
+          return `#### 📈 [${m.title}](/property-details.html?id=${m.id})\n` +
+                 `![${m.title}](${img})\n` +
+                 `* **Price:** **${formatInr(m.price, m.type)}** | **Location:** ${m.address ? m.address + ', ' : ''}${m.city}\n` +
+                 `* **Specs:** ${m.bedrooms ? m.bedrooms + ' BHK | ' : ''}${m.area_sqft ? Number(m.area_sqft).toLocaleString() + ' sq.ft | ' : ''}${m.property_type || 'Residential'}\n` +
+                 `* **Projected Growth:** **~7.5% - 8.2% Annual CAGR** | **Trust Score:** **${m.trust_score}/100**\n` +
+                 `* 🔗 **[View Property Details →](/property-details.html?id=${m.id})**`;
+        }).join('\n\n---\n\n');
+
+        advisorReply = `### 💼 Best Investment Properties in High-Growth Corridors\n\n` +
+          `Based on **IT SEZ expansion**, **arterial road connectivity**, and **steady rental yields**, here are top investment opportunities on HomeSphere:\n\n` +
+          listMarkdown + `\n\n` +
+          `🌟 **Micro-Market Growth Highlights:**\n` +
+          `* **Saravanampatti & CHIL SEZ:** High rental yield (~4.5%) with heavy tenant demand from tech workforce.\n` +
+          `* **Avinashi Road & Peelamedu:** Premium capital stability (~7.2% CAGR) with airport and educational hub proximity.`;
+
+        quickActions = [
+          { text: 'Investment in Saravanampatti', prompt: 'Find properties in Saravanampatti' },
+          { text: 'Investment in Peelamedu', prompt: 'Find properties in Peelamedu' },
+          { text: 'Buy vs Rent Breakeven', prompt: 'Should I rent or buy?' }
+        ];
+      }
+
+      // 2.3 Green Living & Sustainability Intent
+      else if (qLower.includes('green') || qLower.includes('eco') || qLower.includes('solar') || qLower.includes('sustainab') || qLower.includes('environment')) {
+        const [greenProps] = await pool.query(
+          `SELECT p.*, COALESCE(gs.score, 85) as green_score, COALESCE(ts.score, 85) as trust_score,
+                  (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
+           FROM properties p
+           LEFT JOIN green_scores gs ON p.id = gs.property_id
+           LEFT JOIN trust_scores ts ON p.id = ts.property_id
+           WHERE p.status = 'active'
+           ORDER BY COALESCE(gs.score, 70) DESC
+           LIMIT 3`
+        );
+
+        const listMarkdown = greenProps.map(m => {
+          const defaultImg = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80';
+          const img = m.primary_image || defaultImg;
+          return `#### 🌿 [${m.title}](/property-details.html?id=${m.id})\n` +
+                 `![${m.title}](${img})\n` +
+                 `* **Price:** **${formatInr(m.price, m.type)}** | **Location:** ${m.address ? m.address + ', ' : ''}${m.city}\n` +
+                 `* **Green Living Score:** **${m.green_score}/100 (A+ Energy Rating)** | **Trust Score:** **${m.trust_score}/100**\n` +
+                 `* **Eco Features:** Solar Array, EV Charging Bay, Rainwater Recharge System\n` +
+                 `* 🔗 **[View Property Details →](/property-details.html?id=${m.id})**`;
+        }).join('\n\n---\n\n');
+
+        advisorReply = `### 🌱 Top Sustainable & Green Living Properties\n\n` +
+          `Here are active eco-friendly listings engineered for energy independence, EV readiness, and carbon reduction:\n\n` +
+          listMarkdown + `\n\n` +
+          `💡 **Benefits of High Green Scores:** Save 25-35% on recurring power and water utilities with lower carbon footprint.`;
+
+        quickActions = [
+          { text: 'Villas in Peelamedu', prompt: 'Find villas in Peelamedu' },
+          { text: 'Check Hidden Costs', prompt: 'What are the hidden costs of buying a home?' }
+        ];
+      }
+
+      // 2.4 Locality Intelligence & Comparison Intent
+      else if (qLower.includes('locality') || qLower.includes('neighborhood') || qLower.includes('good area') || qLower.includes('best place') || qLower.includes('where to buy') || qLower.includes('location in coimbatore') || qLower.includes('localities in coimbatore') || qLower.includes('peelamedu') || qLower.includes('rs puram') || qLower.includes('gandhipuram')) {
+        const targetLoc = entities.locality || (qLower.includes('peelamedu') ? 'Peelamedu' : (qLower.includes('rs puram') ? 'RS Puram' : (qLower.includes('gandhipuram') ? 'Gandhipuram' : 'Coimbatore')));
+
+        const [locProps] = await pool.query(
+          `SELECT p.*, COALESCE(ts.score, 85) as trust_score, COALESCE(ls.score, 85) as life_score,
+                  (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
+           FROM properties p
+           LEFT JOIN trust_scores ts ON p.id = ts.property_id
+           LEFT JOIN life_scores ls ON p.id = ls.property_id
+           WHERE p.status = 'active' AND (p.city LIKE ? OR p.address LIKE ? OR p.locality LIKE ?)
+           ORDER BY p.price ASC LIMIT 3`,
+          [`%${targetLoc}%`, `%${targetLoc}%`, `%${targetLoc}%`]
+        );
+
+        let locMarkdown = '';
+        if (locProps && locProps.length > 0) {
+          locMarkdown = `\n\n**Verified Active Properties in ${targetLoc}:**\n\n` + locProps.map(m => {
+            return `* **[${m.title}](/property-details.html?id=${m.id})** — ${formatInr(m.price, m.type)} (${m.bedrooms ? m.bedrooms + ' BHK | ' : ''}Trust: ${m.trust_score}/100)`;
+          }).join('\n');
+        }
+
+        advisorReply = `### 📍 Locality Intelligence & Decision Guide: **${targetLoc}**\n\n` +
+          `1. **Peelamedu & Avinashi Road (Established Educational & Transit Core):**\n` +
+          `   - **LifeScore:** **9.2/10** | Ideal for families, medical & IT professionals.\n` +
+          `   - **Highlights:** Proximity to Coimbatore International Airport, PSG Tech, KMCH, and high resale liquidity (~7.2% CAGR).\n\n` +
+          `2. **RS Puram & Race Course (Heritage Luxury Core):**\n` +
+          `   - **LifeScore:** **9.6/10** | Highest safety index and premium lifestyle infrastructure.\n` +
+          `   - **Highlights:** D.B. Road commercial shopping, fine dining, and tree-lined residential tranquility.\n\n` +
+          `3. **Gandhipuram & Central Zone (Commercial & Transport Epicenter):**\n` +
+          `   - **LifeScore:** **9.0/10** | Unrivaled bus terminal connectivity and bustling central commerce.\n\n` +
+          `4. **Saravanampatti (IT Corridor & High Rental Yield):**\n` +
+          `   - **LifeScore:** **8.8/10** | Fastest-growing micro-market with tech parks (~7.8% CAGR).` + locMarkdown;
+
+        quickActions = [
+          { text: 'Properties in Peelamedu', prompt: 'Find properties in Peelamedu' },
+          { text: 'Properties in RS Puram', prompt: 'Find properties in RS Puram' },
+          { text: 'Properties in Gandhipuram', prompt: 'Find properties in Gandhipuram' }
+        ];
+      }
+
+      // 2.5 Multi-Property Comparison Intent
+      else if (qLower.includes('compare') || qLower.includes('versus') || qLower.includes(' vs ') || qLower.includes('which is better')) {
+        const [compProps] = await pool.query(
+          `SELECT p.*, COALESCE(ts.score, 85) as trust_score, COALESCE(ls.score, 85) as life_score, COALESCE(gs.score, 80) as green_score,
+                  (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
+           FROM properties p
+           LEFT JOIN trust_scores ts ON p.id = ts.property_id
+           LEFT JOIN life_scores ls ON p.id = ls.property_id
+           LEFT JOIN green_scores gs ON p.id = gs.property_id
+           WHERE p.status = 'active'
+           ORDER BY p.id ASC LIMIT 2`
+        );
+
+        if (compProps.length >= 2) {
+          const p1 = compProps[0];
+          const p2 = compProps[1];
+          advisorReply = `### ⚖️ AI Decision Comparison Matrix\n\n` +
+            `Here is a side-by-side evaluation of top verified listings on HomeSphere:\n\n` +
+            `| Parameter | **[${p1.title}](/property-details.html?id=${p1.id})** | **[${p2.title}](/property-details.html?id=${p2.id})** |\n` +
+            `| :--- | :--- | :--- |\n` +
+            `| **Price** | **${formatInr(p1.price, p1.type)}** | **${formatInr(p2.price, p2.type)}** |\n` +
+            `| **Location** | ${p1.locality || p1.city} | ${p2.locality || p2.city} |\n` +
+            `| **Specs** | ${p1.bedrooms || 3} BHK (${p1.area_sqft || 1800} sq.ft) | ${p2.bedrooms || 3} BHK (${p2.area_sqft || 1800} sq.ft) |\n` +
+            `| **Trust Score** | **${p1.trust_score}/100** | **${p2.trust_score}/100** |\n` +
+            `| **LifeScore** | **${p1.life_score}/100** | **${p2.life_score}/100** |\n` +
+            `| **Green Living** | **${p1.green_score}/100** | **${p2.green_score}/100** |\n\n` +
+            `💡 **AI Verdict:** If you prioritize livability and safety, **${p1.life_score >= p2.life_score ? p1.title : p2.title}** is recommended. For pricing value, **${p1.price <= p2.price ? p1.title : p2.title}** offers superior entry ROI.\n\n` +
+            `🔗 **[Open Full Interactive Comparison Matrix →](/compare.html?ids=${p1.id},${p2.id})**`;
+        } else {
+          advisorReply = `### ⚖️ Property Comparison Engine\n\n` +
+            `You can compare up to 4 properties side-by-side with full Trust Score, Green Score, and Hidden Cost transparency on our [Property Comparison Tool](/compare.html).`;
+        }
+
+        quickActions = [
+          { text: 'Compare on Compare Page', prompt: 'Open property comparison' },
+          { text: 'Show Properties in Peelamedu', prompt: 'Find properties in Peelamedu' }
+        ];
+      }
+
+      // 2.6 Buy vs Rent Financial Framework
+      else if (qLower.includes('buy vs rent') || qLower.includes('rent vs buy') || qLower.includes('rent or buy') || qLower.includes('buy or rent') || qLower.includes('should i buy') || qLower.includes('should i rent')) {
+        const [saleSample] = await pool.query("SELECT * FROM properties WHERE status = 'active' AND (type = 'sale' OR type = 'buy') ORDER BY price ASC LIMIT 1");
+        const [rentSample] = await pool.query("SELECT * FROM properties WHERE status = 'active' AND (type = 'rent' OR type = 'lease') ORDER BY price ASC LIMIT 1");
+
         advisorReply = `### ⚖️ AI Decision Guide: Buying vs. Renting in 2026\n\n` +
           `* **Choose Buying If:**\n` +
           `  - Your tenure in the city is projected for **4+ years**.\n` +
           `  - You have savings for a **20% down payment** plus statutory ~7% registration costs.\n` +
-          `  - You want predictable housing costs and long-term equity compounding (~6-8% CAGR).\n\n` +
+          `  - You want predictable housing costs and long-term equity compounding (~6-8% CAGR).\n` +
+          (saleSample.length > 0 ? `  - *Example Sale Listing:* **[${saleSample[0].title}](/property-details.html?id=${saleSample[0].id})** — ${formatInr(saleSample[0].price, 'sale')}\n\n` : '\n\n') +
           `* **Choose Renting If:**\n` +
           `  - Your tenure is flexible or likely under **3 years**.\n` +
-          `  - You prioritize liquidity for high-return equity or business capital.\n` +
-          `  - You prefer zero maintenance and low relocation friction.`;
+          `  - You prioritize liquidity for business or equities capital.\n` +
+          `  - You prefer zero property tax and low relocation friction.\n` +
+          (rentSample.length > 0 ? `  - *Example Rental Listing:* **[${rentSample[0].title}](/property-details.html?id=${rentSample[0].id})** — ${formatInr(rentSample[0].price, 'rent')}\n\n` : '\n\n') +
+          `💡 **AI Breakeven Summary:** For a 3 BHK in Coimbatore, renting breaks even with buying at the **4.2-year mark**.`;
 
         quickActions = [
           { text: 'Find Properties for Rent', prompt: 'Show 2 BHK properties for rent in Coimbatore' },
@@ -607,7 +655,24 @@ const getAdvisorResponse = async (req, res, next) => {
         ];
       }
 
-      // 2.4 Legal Checklist & Document Verification
+      // 2.7 Hidden Costs Overview
+      else if (qLower.includes('cost') || qLower.includes('hidden') || qLower.includes('stamp duty') || qLower.includes('registration fee') || qLower.includes('extra fee')) {
+        advisorReply = `### 💰 Real-Estate Hidden Cost Intelligence Framework\n\n` +
+          `When budgeting for a property purchase in Tamil Nadu, always factor in these statutory and initial outlays beyond the listing price:\n\n` +
+          `* **1. Statutory Stamp Duty:** **7.0%** of conveyance deed consideration (residential sale).\n` +
+          `* **2. Sub-Registrar Registration Fee:** **1.0%** of property valuation.\n` +
+          `* **3. Annual Society Maintenance:** Approximately **₹2.0 - ₹3.0 / sq.ft / month** (₹24,000 - ₹45,000/yr for typical apartments).\n` +
+          `* **4. Interior Fit-out Buffer:** ₹120/sq.ft (semi-furnished) to ₹250/sq.ft (unfurnished woodwork & modular kitchen).\n` +
+          `* **5. Legal & Municipal Due Diligence:** ~₹10,000 - ₹20,000 for 30-year title deed search and EC clearance.\n\n` +
+          `💡 *Select any active property in the top dropdown to calculate the exact line-by-line rupee breakdown.*`;
+
+        quickActions = [
+          { text: 'Properties in Peelamedu', prompt: 'Find properties in Peelamedu' },
+          { text: 'Buy vs Rent Analysis', prompt: 'Should I rent or buy?' }
+        ];
+      }
+
+      // 2.8 Legal Checklist & Document Verification
       else if (qLower.includes('document') || qLower.includes('check before buying') || qLower.includes('legal checklist') || qLower.includes('paperwork')) {
         advisorReply = `### 📑 Critical Property Documents to Verify Before Purchase\n\n` +
           `1. **Parent Title Deed (Mother Deed):** Traces 30-year unbroken chain of title ownership.\n` +
@@ -622,14 +687,89 @@ const getAdvisorResponse = async (req, res, next) => {
         ];
       }
 
-      // 2.5 General Real Estate Question fallback
+      // 2.9 Multi-Turn Property Search / Discovery
       else {
-        advisorReply = `### 🤖 HomeSphere AI Decision Advisor\n\n` +
-          `I am your intelligent real-estate decision assistant. Here is how I can help you today:\n\n` +
-          `* 🏡 **Deep Property Evaluation:** Select any listing from the top dropdown to compute **Hidden Costs**, **Locality LifeScores**, and **5-Year Capital Trajectory**.\n` +
-          `* 🔍 **Multi-Criteria Property Discovery:** Tell me your requirement (e.g. *"Find a 2 BHK for rent in Peelamedu under 20000"* or *"Show 3 BHK villas in Saravanampatti"*).\n` +
-          `* ⚖️ **Decision Analysis:** Ask about **Buy vs Rent breakeven**, **legal verification checklist**, or **Coimbatore micro-market trends**.\n\n` +
-          `What would you like to explore?`;
+        let sql = `SELECT p.*,
+                          COALESCE(ts.score, 75) as trust_score,
+                          COALESCE(ls.score, 80) as life_score,
+                          COALESCE(gs.score, 70) as green_score,
+                          (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
+                   FROM properties p
+                   LEFT JOIN trust_scores ts ON p.id = ts.property_id
+                   LEFT JOIN life_scores ls ON p.id = ls.property_id
+                   LEFT JOIN green_scores gs ON p.id = gs.property_id
+                   WHERE p.status = 'active'`;
+        const params = [];
+
+        // Locality filter
+        if (entities.locality) {
+          sql += ` AND (p.city LIKE ? OR p.address LIKE ? OR p.locality LIKE ?)`;
+          params.push(`%${entities.locality}%`, `%${entities.locality}%`, `%${entities.locality}%`);
+        }
+
+        // Listing type filter (Rent vs Sale)
+        if (entities.listingType) {
+          if (entities.listingType === 'rent' || entities.listingType === 'lease') {
+            sql += ` AND (p.type = 'rent' OR p.type = 'lease')`;
+          } else if (entities.listingType === 'sale' || entities.listingType === 'buy') {
+            sql += ` AND (p.type = 'sale' OR p.type = 'buy')`;
+          }
+        }
+
+        // Bedrooms / BHK filter
+        if (entities.bedrooms) {
+          sql += ` AND (p.bedrooms = ? OR p.bhk = ?)`;
+          params.push(entities.bedrooms, entities.bedrooms);
+        }
+
+        // Budget filter
+        if (entities.maxBudget) {
+          sql += ` AND p.price <= ?`;
+          params.push(entities.maxBudget);
+        }
+
+        // Property type filter
+        if (entities.propertyType) {
+          sql += ` AND (p.property_type = ? OR p.category = ?)`;
+          params.push(entities.propertyType, entities.propertyType);
+        }
+
+        sql += ` ORDER BY p.price ASC LIMIT 3`;
+
+        let [matchingProps] = await pool.query(sql, params);
+
+        // Fallback to top active verified listings
+        if (!matchingProps || matchingProps.length === 0) {
+          const [topAll] = await pool.query(
+            `SELECT p.*, COALESCE(ts.score, 85) as trust_score, COALESCE(ls.score, 85) as life_score,
+                    (SELECT image_url FROM property_images WHERE property_id = p.id ORDER BY is_primary DESC, id ASC LIMIT 1) as primary_image
+             FROM properties p
+             LEFT JOIN trust_scores ts ON p.id = ts.property_id
+             LEFT JOIN life_scores ls ON p.id = ls.property_id
+             WHERE p.status = 'active'
+             ORDER BY COALESCE(ts.score, 80) DESC, p.created_at DESC LIMIT 3`
+          );
+          matchingProps = topAll;
+        }
+
+        const listMarkdown = matchingProps.map(m => {
+          const defaultImg = 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?auto=format&fit=crop&w=600&q=80';
+          const img = m.primary_image || defaultImg;
+          const priceDisplay = formatInr(m.price, m.type);
+          const specs = `${m.bedrooms ? m.bedrooms + ' BHK | ' : ''}${m.area_sqft ? Number(m.area_sqft).toLocaleString() + ' sq.ft | ' : ''}${m.property_type || m.category || 'Residential'}`;
+
+          return `#### 🏡 [${m.title}](/property-details.html?id=${m.id})\n` +
+                 `![${m.title}](${img})\n` +
+                 `* **Price:** **${priceDisplay}** | **Location:** ${m.address ? m.address + ', ' : ''}${m.city}\n` +
+                 `* **Specs:** ${specs}\n` +
+                 `* **Trust Score:** **${m.trust_score}/100** | **LifeScore:** **${m.life_score}/100**\n` +
+                 `* 🔗 **[View Property Details →](/property-details.html?id=${m.id})**`;
+        }).join('\n\n---\n\n');
+
+        advisorReply = `### 🔍 Verified Recommendations on HomeSphere\n\n` +
+          `Here are top active verified listings matching current market trends:\n\n` +
+          listMarkdown + `\n\n` +
+          `💡 *Ask me about **hidden costs**, **locality safety**, **family suitability**, or **5-year forecast** for any property.*`;
 
         quickActions = [
           { text: '2 BHK Rent in Peelamedu', prompt: 'Find me a 2 BHK for rent in Peelamedu under 20000' },
@@ -653,6 +793,7 @@ const getAdvisorResponse = async (req, res, next) => {
     next(err);
   }
 };
+
 
 // 3. Property Trust Score
 const calculateTrustScore = async (req, res, next) => {

@@ -1,4 +1,4 @@
-// HomeSphere In-App Property Chat Logic
+// HomeSphere In-App Property Chat & Multilingual Communication System
 
 let currentPropertyId = null;
 let currentOtherUserId = null;
@@ -104,7 +104,7 @@ function renderConversationsList(threads) {
       <div class="thread-item ${isActive ? 'active' : ''}" onclick="openThread(${t.property_id}, ${t.other_user_id}, localStorage.getItem('homesphere_token'))">
         <div class="thread-avatar-wrapper">
           <img src="${avatarUrl}" class="thread-avatar" alt="${escapeHtml(t.other_user_name)}">
-          <img src="${t.primary_image}" class="thread-prop-mini" alt="Property">
+          <img src="${t.primary_image || '/images/no-property-image.svg'}" class="thread-prop-mini" alt="Property">
         </div>
         <div class="thread-info">
           <div class="thread-header-line">
@@ -130,9 +130,9 @@ function filterConversations(query) {
     return;
   }
   const filtered = allConversations.filter((t) =>
-    t.other_user_name.toLowerCase().includes(q) ||
-    t.property_title.toLowerCase().includes(q) ||
-    t.last_message.toLowerCase().includes(q)
+    (t.other_user_name && t.other_user_name.toLowerCase().includes(q)) ||
+    (t.property_title && t.property_title.toLowerCase().includes(q)) ||
+    (t.last_message && t.last_message.toLowerCase().includes(q))
   );
   renderConversationsList(filtered);
 }
@@ -179,32 +179,33 @@ async function openThread(propertyId, otherUserId, token) {
 
 // Render Active Chat Header, Quick Actions, and Messages Stream
 function renderActiveChat(thread) {
-  const p = thread.property;
-  const user = thread.other_user;
+  const p = thread.property || {};
+  const user = thread.other_user || {};
 
   // Update Header Elements
-  document.getElementById('chatPartnerName').textContent = user.name || 'Member';
-  document.getElementById('chatPartnerRole').textContent = (user.role || 'MEMBER').toUpperCase();
-  document.getElementById('chatPartnerAvatar').src = user.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80';
+  if (document.getElementById('chatPartnerName')) document.getElementById('chatPartnerName').textContent = user.name || 'Member';
+  if (document.getElementById('chatPartnerRole')) document.getElementById('chatPartnerRole').textContent = (user.role || 'MEMBER').toUpperCase();
+  if (document.getElementById('chatPartnerAvatar')) document.getElementById('chatPartnerAvatar').src = user.avatar_url || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=300&q=80';
 
-  const priceFormatted = Number(p.price).toLocaleString();
-  const priceDisplay = p.type === 'rent' ? `$${priceFormatted}/mo` : `$${priceFormatted}`;
+  const priceFormatted = Number(p.price || 0).toLocaleString();
+  const priceDisplay = (p.type === 'rent' || p.type === 'lease') ? `₹${priceFormatted}/mo` : `₹${priceFormatted}`;
 
-  document.getElementById('chatPropTitle').textContent = p.title;
-  document.getElementById('chatPropPrice').textContent = priceDisplay;
-  document.getElementById('chatPropThumb').src = p.primary_image;
+  if (document.getElementById('chatPropTitle')) document.getElementById('chatPropTitle').textContent = p.title || 'Property';
+  if (document.getElementById('chatPropPrice')) document.getElementById('chatPropPrice').textContent = priceDisplay;
+  if (document.getElementById('chatPropThumb')) document.getElementById('chatPropThumb').src = p.primary_image || '/images/no-property-image.svg';
 
   // Update Quick Action Buttons
-  document.getElementById('actionScheduleVisitBtn').href = `/property-details.html?id=${p.id}#scheduleVisitModal`;
-  document.getElementById('actionVirtualTourBtn').href = `/property-details.html?id=${p.id}#virtualTourCard`;
-  document.getElementById('actionMakeOfferBtn').href = p.type === 'rent' ? `/property-details.html?id=${p.id}#rentalAppModal` : `/property-details.html?id=${p.id}#makeOfferModal`;
-  document.getElementById('actionViewPropBtn').href = `/property-details.html?id=${p.id}`;
+  if (document.getElementById('actionScheduleVisitBtn')) document.getElementById('actionScheduleVisitBtn').href = `/property-details.html?id=${p.id}#scheduleVisitModal`;
+  if (document.getElementById('actionVirtualTourBtn')) document.getElementById('actionVirtualTourBtn').href = `/property-details.html?id=${p.id}#virtualTourCard`;
+  if (document.getElementById('actionMakeOfferBtn')) document.getElementById('actionMakeOfferBtn').href = p.type === 'rent' ? `/property-details.html?id=${p.id}#rentalAppModal` : `/property-details.html?id=${p.id}#makeOfferModal`;
+  if (document.getElementById('actionViewPropBtn')) document.getElementById('actionViewPropBtn').href = `/property-details.html?id=${p.id}`;
 
   // Render Messages Stream
   const currentUserId = JSON.parse(localStorage.getItem('homesphere_user') || '{}').id;
   const stream = document.getElementById('messagesStream');
+  if (!stream) return;
 
-  if (thread.messages.length === 0) {
+  if (!thread.messages || thread.messages.length === 0) {
     stream.innerHTML = `
       <div style="text-align:center;padding:3rem 1rem;color:var(--text-muted);">
         <i class="fas fa-handshake" style="font-size:2.5rem;color:var(--accent-cyan);margin-bottom:0.75rem;opacity:0.8;"></i>
@@ -218,14 +219,21 @@ function renderActiveChat(thread) {
   stream.innerHTML = thread.messages.map((m) => {
     const isOutgoing = m.sender_id === currentUserId;
     const timeFormatted = new Date(m.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const escapedMsg = escapeHtml(m.message);
 
     return `
-      <div class="message-bubble-wrapper ${isOutgoing ? 'outgoing' : 'incoming'}">
-        <div class="message-sender-name">${isOutgoing ? 'You' : escapeHtml(m.sender_name)}</div>
-        <div class="message-bubble">${escapeHtml(m.message)}</div>
-        <div class="message-meta">
-          <span>${timeFormatted}</span>
-          ${isOutgoing ? `<i class="fas fa-check-double ${m.is_read ? 'text-cyan' : ''}" title="${m.is_read ? 'Read' : 'Delivered'}"></i>` : ''}
+      <div class="message-bubble-wrapper ${isOutgoing ? 'outgoing' : 'incoming'}" id="msg-wrap-${m.id}">
+        <div class="message-sender-name">${isOutgoing ? 'You' : escapeHtml(m.sender_name || 'Seller')}</div>
+        <div class="message-bubble" id="msg-body-${m.id}">${escapedMsg}</div>
+        <div id="msg-trans-${m.id}" class="message-translation-box" style="display:none; font-size:0.85rem; color:var(--text-secondary); background:rgba(0,0,0,0.05); padding:0.4rem 0.6rem; border-radius:6px; margin-top:0.3rem;"></div>
+        <div class="message-meta" style="display:flex; justify-content:space-between; align-items:center; gap:0.5rem;">
+          <div>
+            <span>${timeFormatted}</span>
+            ${isOutgoing ? `<i class="fas fa-check-double ${m.is_read ? 'text-cyan' : ''}" title="${m.is_read ? 'Read' : 'Delivered'}"></i>` : ''}
+          </div>
+          <button type="button" class="btn-translate-msg" onclick="translateMessage(${m.id}, this)" style="background:none; border:none; color:var(--accent-cyan); font-size:0.75rem; cursor:pointer; padding:0; display:inline-flex; align-items:center; gap:0.25rem;">
+            <i class="fas fa-language"></i> Translate
+          </button>
         </div>
       </div>
     `;
@@ -234,6 +242,57 @@ function renderActiveChat(thread) {
   // Auto-scroll to latest message
   stream.scrollTop = stream.scrollHeight;
 }
+
+// Multilingual Dynamic Translation Handler
+window.translateMessage = async function(msgId, btn) {
+  const transBox = document.getElementById(`msg-trans-${msgId}`);
+  const msgBody = document.getElementById(`msg-body-${msgId}`);
+  if (!transBox || !msgBody) return;
+
+  const text = msgBody.textContent;
+
+  if (transBox.style.display !== 'none' && transBox.getAttribute('data-loaded') === 'true') {
+    // Toggle hide
+    transBox.style.display = 'none';
+    btn.innerHTML = '<i class="fas fa-language"></i> Translate';
+    return;
+  }
+
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Translating...';
+  const token = localStorage.getItem('homesphere_token');
+
+  try {
+    const isTamil = /[\u0B80-\u0BFF]/.test(text);
+    const targetLang = isTamil ? 'en' : 'ta';
+
+    const res = await fetch('/api/messages/translate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ message_id: msgId, text, target_lang: targetLang })
+    });
+    const data = await res.json();
+
+    if (data.success && data.data) {
+      const translated = data.data.translated_message;
+      const langLabel = targetLang === 'en' ? 'English' : 'தமிழ் (Tamil)';
+      transBox.innerHTML = `<strong>🌐 ${langLabel}:</strong> ${escapeHtml(translated)}`;
+      transBox.style.display = 'block';
+      transBox.setAttribute('data-loaded', 'true');
+      btn.innerHTML = '<i class="fas fa-eye-slash"></i> Hide';
+    } else {
+      transBox.innerHTML = `<span class="text-rose">Translation unavailable.</span>`;
+      transBox.style.display = 'block';
+      btn.innerHTML = '<i class="fas fa-language"></i> Retry';
+    }
+  } catch (err) {
+    transBox.innerHTML = `<span class="text-rose">Translation error: ${escapeHtml(err.message)}</span>`;
+    transBox.style.display = 'block';
+    btn.innerHTML = '<i class="fas fa-language"></i> Retry';
+  }
+};
 
 // Setup Clean Chat Context for newly initiated conversation
 function setupNewChatContext(prop, otherUserId) {
@@ -262,3 +321,140 @@ function setupNewChatContext(prop, otherUserId) {
 async function handleSendMessage(token) {
   const input = document.getElementById('chatInputMessage');
   if (!input || !currentPropertyId || !currentOtherUserId) return;
+
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+
+  try {
+    const res = await fetch('/api/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        property_id: currentPropertyId,
+        receiver_id: currentOtherUserId,
+        message: text
+      })
+    });
+
+    const data = await res.json();
+    if (!res.ok || !data.success) throw new Error(data.message || 'Failed to send message.');
+
+    // Refresh active thread
+    await pollActiveThread(token);
+    await loadConversations(token);
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
+}
+
+// Poll Active Thread Messages
+async function pollActiveThread(token) {
+  if (!currentPropertyId || !currentOtherUserId) return;
+  try {
+    const res = await fetch(`/api/messages/thread/${currentPropertyId}/${currentOtherUserId}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success && data.data) {
+      activeThreadData = data.data;
+      renderActiveChat(activeThreadData);
+    }
+  } catch (e) {
+    // Non-blocking poll error
+  }
+}
+
+// Load Unread Count
+async function loadUnreadCount(token) {
+  try {
+    const res = await fetch('/api/messages/unread-count', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    if (res.ok && data.success) {
+      const count = data.data.unread_count || 0;
+      document.querySelectorAll('.unread-messages-count').forEach((el) => {
+        el.textContent = count;
+        el.style.display = count > 0 ? 'inline-block' : 'none';
+      });
+    }
+  } catch (e) {}
+}
+
+// Load AI Suggested Replies
+async function loadAISuggestions(propertyId, messages, token) {
+  const container = document.getElementById('aiSuggestionsContainer');
+  if (!container) return;
+
+  try {
+    const user = JSON.parse(localStorage.getItem('homesphere_user') || '{}');
+    const isSeller = activeThreadData?.property?.owner_id === user.id;
+    const lastMsg = messages && messages.length > 0 ? messages[messages.length - 1].message : '';
+
+    const res = await fetch('/api/messages/ai-suggest', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        property_id: propertyId,
+        last_message: lastMsg,
+        is_seller: isSeller
+      })
+    });
+    const data = await res.json();
+
+    if (res.ok && data.success && data.data?.suggestions) {
+      container.innerHTML = data.data.suggestions.map((s) => `
+        <button type="button" class="ai-suggestion-chip" onclick="applySuggestion('${escapeHtml(s).replace(/'/g, "\\'")}')">
+          <i class="fas fa-sparkles text-purple"></i> ${escapeHtml(s)}
+        </button>
+      `).join('');
+    }
+  } catch (e) {}
+}
+
+window.applySuggestion = function(text) {
+  const input = document.getElementById('chatInputMessage');
+  if (input) {
+    input.value = text;
+    input.focus();
+  }
+};
+
+// Utilities
+function formatTimeAgo(dateString) {
+  if (!dateString) return '';
+  const d = new Date(dateString);
+  const now = new Date();
+  const diffMs = now - d;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHr = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHr / 24);
+
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin}m ago`;
+  if (diffHr < 24) return `${diffHr}h ago`;
+  if (diffDay < 7) return `${diffDay}d ago`;
+  return d.toLocaleDateString();
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+function showToast(msg, type = 'info') {
+  console.log(`[Toast ${type}] ${msg}`);
+}

@@ -206,6 +206,31 @@ async function saveToShortlist(propertyId, e) {
   }
 }
 
+function handleDashboardHeaderSearch(e) {
+  if (e) e.preventDefault();
+  const input = document.getElementById('headerSearchInput');
+  const query = input ? input.value.trim() : '';
+  if (query) {
+    window.location.href = `/properties.html?q=${encodeURIComponent(query)}`;
+  } else {
+    window.location.href = '/properties.html';
+  }
+}
+
+function handleQuickSearch(e) {
+  if (e) e.preventDefault();
+  const location = document.getElementById('qsLocation')?.value.trim() || '';
+  const category = document.getElementById('qsCategory')?.value || 'residential';
+  const purpose = document.getElementById('qsPurpose')?.value || 'sale';
+  const bhk = document.getElementById('qsBHK')?.value || 'all';
+
+  let url = `/properties.html?category=${encodeURIComponent(category)}&type=${encodeURIComponent(purpose)}`;
+  if (location) url += `&city=${encodeURIComponent(location)}`;
+  if (bhk && bhk !== 'all') url += `&bedrooms=${encodeURIComponent(bhk)}`;
+
+  window.location.href = url;
+}
+
 function handleLogout() {
   localStorage.removeItem('homesphere_token');
   localStorage.removeItem('homesphere_user');

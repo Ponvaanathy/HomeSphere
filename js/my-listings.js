@@ -10,8 +10,33 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.location.href = '/login.html';
     return;
   }
+
+  const authActions = document.getElementById('navAuthActions');
+  const brandLogoLink = document.getElementById('brandLogoLink');
+  if (brandLogoLink) brandLogoLink.href = '/dashboard.html';
+  if (authActions) {
+    let userName = 'Profile';
+    let userInit = 'U';
+    try {
+      const u = JSON.parse(localStorage.getItem('homesphere_user') || '{}');
+      if (u.name) {
+        userName = u.name;
+        userInit = u.name.charAt(0).toUpperCase();
+      }
+    } catch (e) {}
+    authActions.innerHTML = `
+      <a href="/profile.html" class="nav-profile-header-link" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.25rem 0.65rem; border-radius: 50px; background: var(--bg-surface-alt); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.8125rem; font-weight: 600;" title="View Profile">
+        <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--brand-primary); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">${userInit}</div>
+        <span class="hide-mobile">${userName}</span>
+      </a>
+      <a href="/dashboard.html" class="btn btn-secondary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>
+      <a href="/list-property.html" class="btn btn-primary btn-sm"><i class="fas fa-plus"></i> Post Property</a>
+    `;
+  }
+
   await loadMyListings();
 });
+
 
 async function loadMyListings() {
   const tbody = document.getElementById('myListingsTableBody');

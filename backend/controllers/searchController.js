@@ -93,7 +93,34 @@ const getFilterOptions = async (req, res, next) => {
   }
 };
 
+// GET /api/search/geocode?q=...
+const geocodeQuery = async (req, res, next) => {
+  try {
+    const { q = '' } = req.query;
+    const { geocodeAddress } = require('../services/geocodingService');
+    const result = await geocodeAddress(q);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+// GET /api/search/reverse-geocode?lat=...&lng=...
+const reverseGeocodeQuery = async (req, res, next) => {
+  try {
+    const { lat, lng } = req.query;
+    const { reverseGeocode } = require('../services/geocodingService');
+    const result = await reverseGeocode(lat, lng);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getSearchSuggestions,
-  getFilterOptions
+  getFilterOptions,
+  geocodeQuery,
+  reverseGeocodeQuery
 };
+

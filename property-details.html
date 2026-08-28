@@ -308,46 +308,17 @@
             </p>
 
             <div id="hiddenCostContainer">
-              <table class="costs-table">
-                <tbody>
-                  <tr>
-                    <td><strong>Property Price</strong> <span class="text-muted" style="font-size: 0.78rem;">(Base Listing Price)</span></td>
-                    <td style="text-align: right; font-weight: 700;" id="costBasePrice">—</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Stamp Duty</strong> <span class="badge" style="font-size: 0.65rem; background: #f1f5f9; color: #475569;" id="costStampBadge">Estimated ~7%</span></td>
-                    <td style="text-align: right;" id="costRegistration">—</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Registration Fee</strong> <span class="badge" style="font-size: 0.65rem; background: #f1f5f9; color: #475569;">Estimated 1%</span></td>
-                    <td style="text-align: right;" id="costGovtFee">—</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Annual Society Maintenance</strong> <span class="text-muted" style="font-size: 0.78rem;" id="costMaintSub">(Scaled to area)</span></td>
-                    <td style="text-align: right;" id="costMaintenance">—</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Fit-out / Interior Estimate</strong> <span class="text-muted" style="font-size: 0.78rem;" id="costFitoutSub">(Based on furnishing)</span></td>
-                    <td style="text-align: right;" id="costReno">—</td>
-                  </tr>
-                  <tr>
-                    <td><strong>Other Estimated Costs</strong> <span class="text-muted" style="font-size: 0.78rem;">(Property tax & legal buffer)</span></td>
-                    <td style="text-align: right;" id="costOther">—</td>
-                  </tr>
-                  <tr class="total-row" style="background: #f8fafc; font-size: 1.05rem;">
-                    <td><strong style="color: var(--brand-primary);">Total Estimated First-Year Outlay</strong></td>
-                    <td style="text-align: right; font-weight: 800; color: var(--brand-primary);" id="costTotal">—</td>
-                  </tr>
-                </tbody>
-              </table>
+              <!-- Dynamically rendered cost items table with strict math sum & formula breakdown -->
+              <div class="costs-table-wrapper" id="hiddenCostTableWrapper"></div>
 
               <!-- "How is this calculated?" Accordion -->
-              <details style="margin-top: 1.25rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem 1rem; font-size: 0.8125rem; color: var(--text-secondary);">
+              <details style="margin-top: 1.25rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.85rem 1rem; font-size: 0.8125rem; color: var(--text-secondary);" id="costDetailsAccordion">
                 <summary style="font-weight: 700; color: var(--brand-primary); cursor: pointer; display: flex; align-items: center; gap: 0.4rem;">
-                  <i class="fas fa-question-circle"></i> How is this calculated?
+                  <i class="fas fa-calculator"></i> How is this calculated? (Line-by-Line Mathematical Formulas)
                 </summary>
-                <div style="margin-top: 0.65rem; line-height: 1.6;" id="costAssumptionsText">
-                  Calculations use statutory state benchmarks: Stamp duty is estimated at ~7% for sales / ~1% for leases; registration is estimated at 1%; annual maintenance is calibrated by built-up area; and fit-out allowances reflect furnishing status. These values represent realistic budgeting estimates and are not official government tax assessments.
+                <div id="costFormulasList" style="margin-top: 0.75rem; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+                <div style="margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--border-color); font-size: 0.75rem; color: var(--text-muted); line-height: 1.5;" id="costAssumptionsText">
+                  All calculations strictly sum visible items. Rates reflect statutory state slabs and physical property dimensions. Estimated rates are not official government assessments.
                 </div>
               </details>
             </div>
@@ -371,33 +342,13 @@
             </div>
           </div>
 
-          <!-- 📈 5-Year Capital Forecast & Resale Velocity -->
-          <div class="card capital-forecast-card" id="forecastSection" style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
-            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.25rem; flex-wrap: wrap; gap: 0.5rem;">
-              <div>
-                <div class="section-eyebrow"><i class="fas fa-chart-line text-emerald"></i> Appreciation & Liquidity</div>
-                <h3 style="font-size: 1.25rem; color: var(--text-primary); margin-top: 0.25rem;">📈 5-YEAR CAPITAL FORECAST</h3>
-              </div>
-              <div style="display: flex; gap: 0.5rem; align-items: center;">
-                <span class="score-pill green" id="forecastCagrBadge"><i class="fas fa-arrow-trend-up"></i> ~7.2% CAGR</span>
-                <span class="score-pill trust" id="forecastVelocityBadge"><i class="fas fa-bolt"></i> FAST Resale</span>
-              </div>
-            </div>
-            <p class="text-secondary" style="font-size: 0.875rem; margin-bottom: 1.25rem;">
-              Estimated CAGR compounding trajectory & secondary market resale velocity for this property.
-            </p>
-
-            <div id="capitalForecastContainer">
-              <!-- Dynamically populated forecast metrics, trajectory canvas chart & compounding table -->
-            </div>
-          </div>
-
           <!-- Interactive Map (Section 23) -->
           <div style="background: #ffffff; border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 1.75rem; box-shadow: var(--shadow-sm);">
             <div class="section-eyebrow"><i class="fas fa-map-marker-alt text-brand"></i> Geo-Coordinates</div>
             <h3 style="font-size: 1.25rem; color: var(--text-primary); margin-bottom: 0.75rem;">Location & GPS Intelligence</h3>
             <div id="detailsMapContainer" style="width: 100%; height: 320px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); z-index: 1;"></div>
           </div>
+
 
 
         </div>

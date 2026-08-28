@@ -288,11 +288,52 @@ const getAISuggestedReply = async (req, res, next) => {
   }
 };
 
+/**
+ * POST /api/messages/translate
+ * Dynamically translates arbitrary chat messages without modifying database originals.
+ */
+const translateMessageContent = async (req, res, next) => {
+  try {
+    const { message_id, text, target_lang = 'en' } = req.body;
+    let textToTranslate = text;
+
+    if (!textToTranslate && message_id) {
+      const [msgRows] = await pool.query('SELECT message FROM messages WHERE id = ?', [message_id]);
+      if (msgRows.length > 0) {
+        textToTranslate = msgRows[0].message;
+      }
+    }
+
+    if (!textToTranslate) {
+      return res.status(400).json({ success: false, message: 'No text or valid message_id provided to translate.' });
+    }
+
+    const { translateText } = require('../services/translationService');
+    const result = await translateText(textToTranslate, target_lang);
+
+    res.json({
+      success: true,
+      data: {
+        message_id: message_id || null,
+        original_message: textToTranslate,
+        translated_message: result.translated_text,
+        source_language: result.source_lang,
+        target_language: target_lang,
+        is_translated: result.is_translated
+      }
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
 module.exports = {
   getConversations,
   getThreadMessages,
   sendMessage,
   markThreadRead,
   getUnreadCount,
-  getAISuggestedReply
+  getAISuggestedReply,
+  translateMessageContent
 };
+

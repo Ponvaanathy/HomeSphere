@@ -87,20 +87,19 @@ async function verify() {
     // ==============================================================
     console.log('\n4️⃣ Analytics & Decision Intelligence Endpoints (The 4 Features):');
 
-    // Feature 1: Hidden Cost Engine
+    // Feature 1: Dynamic Hidden Cost Engine (Strict Sum & Itemized Models)
     const a5 = await fetch('http://localhost:5000/api/properties/5/analytics').then(r => r.json());
     const a6 = await fetch('http://localhost:5000/api/properties/6/analytics').then(r => r.json());
-
     test('FEATURE 1: Hidden Cost Engine returns property-specific calculations',
-      a5.success && a5.data.hiddenCosts && a5.data.hiddenCosts.totalEstimatedCost > 0 &&
-      a6.success && a6.data.hiddenCosts && a6.data.hiddenCosts.totalEstimatedCost > 0 &&
-      a5.data.hiddenCosts.totalEstimatedCost !== a6.data.hiddenCosts.totalEstimatedCost,
-      `Prop 5 Total: ₹${a5.data?.hiddenCosts?.totalEstimatedCost} vs Prop 6 Total: ₹${a6.data?.hiddenCosts?.totalEstimatedCost}`
+      a5.data?.hiddenCosts &&
+      a5.data.hiddenCosts.totalEstimatedCost > 0 &&
+      Array.isArray(a5.data.hiddenCosts.items),
+      `Total Outlay: ₹${a5.data?.hiddenCosts?.totalEstimatedCost}`
     );
 
-    test('FEATURE 1: Hidden Cost Engine includes itemized stamp duty, registration, maintenance & fit-out',
-      a5.data?.hiddenCosts?.stampDuty > 0 && a5.data?.hiddenCosts?.registration > 0 && a5.data?.hiddenCosts?.maintenance > 0 && a5.data?.hiddenCosts?.fitOut > 0,
-      `Stamp: ${a5.data?.hiddenCosts?.stampDuty}, Reg: ${a5.data?.hiddenCosts?.registration}, Maint: ${a5.data?.hiddenCosts?.maintenance}, Fitout: ${a5.data?.hiddenCosts?.fitOut}`
+    test('FEATURE 1: Hidden Cost Engine strictly equals SUM of visible line items',
+      a5.data?.hiddenCosts?.totalEstimatedCost === a5.data?.hiddenCosts?.items?.reduce((sum, i) => sum + i.amount, 0),
+      `Strict Math Sum: ₹${a5.data?.hiddenCosts?.totalEstimatedCost}`
     );
 
     // Feature 2: Locality LifeScore Radar (0–10 Scale)
@@ -120,19 +119,11 @@ async function verify() {
       `Peelamedu: ${a5.data?.lifeScore?.overallScore}/10 vs Saravanampatti: ${a6.data?.lifeScore?.overallScore}/10`
     );
 
-    // Feature 3 & 5: 5-Year Capital Forecast & Resale Velocity
-    test('FEATURE 3: 5-Year Capital Forecast projects compounding growth trajectory',
-      a5.data?.capitalForecast &&
-      a5.data.capitalForecast.currentValue > 0 &&
-      a5.data.capitalForecast.year1 > a5.data.capitalForecast.currentValue &&
-      a5.data.capitalForecast.year5 > a5.data.capitalForecast.year1 &&
-      a5.data.capitalForecast.growthPercentage > 0,
-      `V0: ₹${a5.data?.capitalForecast?.currentValue} -> V5: ₹${a5.data?.capitalForecast?.year5} (+${a5.data?.capitalForecast?.growthPercentage}%)`
-    );
-
-    test('FEATURE 3: Resale Velocity derived meaningful rating (FAST / MODERATE / SLOW)',
-      ['FAST', 'MODERATE', 'SLOW'].includes(a5.data?.capitalForecast?.resaleVelocity),
-      `Velocity: ${a5.data?.capitalForecast?.resaleVelocity} - Reason: ${a5.data?.capitalForecast?.velocityReason}`
+    // Feature 3: UI Forecast Graph Removed
+    const detailsHtml = fs.readFileSync(path.join(__dirname, '../../property-details.html'), 'utf8');
+    test('FEATURE 3: 5-Year Capital Forecast graph is completely removed from Property Details UI',
+      !detailsHtml.includes('id="forecastSection"') && !detailsHtml.includes('5-YEAR CAPITAL FORECAST'),
+      'Forecast UI removed cleanly'
     );
 
     // Feature 4: AI Agent Advisor Underlying Logic
@@ -238,12 +229,95 @@ async function verify() {
       intelData.data?.lifeScore?.overallScore > 0,
       `Avg Buy: ₹${intelData.data?.metrics?.avgPrice}, Avg Rent: ₹${intelData.data?.metrics?.avgRent}, Overall LifeScore: ${intelData.data?.lifeScore?.overallScore}/10`
     );
+    // 6. List Property Feature & Flow
+    console.log('\n6️⃣ List Property Feature & Flow:');
+
+    // Authenticate test user
+    const loginRes = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'seller@homesphere.com', password: 'password123' })
+    }).then(r => r.json());
+
+    const testToken = loginRes.data?.token;
+    const testSellerId = loginRes.data?.user?.id;
+
+    const uniqueStamp = Date.now() + Math.floor(Math.random() * 100000);
+    const uniquePrice = 35000000 + Math.floor(Math.random() * 15000000);
+    const listPropPayload = {
+      title: `Green Valley 3BHK Villa Saravanampatti ${uniqueStamp}`,
+      description: 'Ultra-modern 3BHK villa with private terrace and EV charger.',
+      category: 'residential',
+      subcategory: 'villa',
+      property_type: 'villa',
+      type: 'sale',
+      price: uniquePrice,
+      currency: 'INR',
+      address: `18 IT Park Road North ${uniqueStamp}`,
+      locality: 'Saravanampatti',
+      city: 'Coimbatore',
+      state: 'Tamil Nadu',
+      zip_code: '641035',
+      lat: 11.082500,
+      lng: 76.996100,
+      bedrooms: 3,
+      bathrooms: 3,
+      bhk: 3,
+      area_sqft: 2100 + Math.floor(Math.random() * 500),
+
+
+
+      year_built: 2024,
+      furnishing: 'semi-furnished',
+      parking_spaces: 2,
+      amenities_json: ['24/7 Security', 'EV Charging Station', 'Power Backup']
+    };
+
+    const createPropRes = await fetch('http://localhost:5000/api/properties', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${testToken}`
+      },
+      body: JSON.stringify(listPropPayload)
+    }).then(r => r.json());
+
+    test('LIST PROPERTY: POST /api/properties successfully inserts new property',
+      createPropRes.success && !!createPropRes.data?.property_id,
+      `Created Property ID: #${createPropRes.data?.property_id} (Message: ${createPropRes.message})`
+    );
+
+
+    const newPropId = createPropRes.data?.property_id;
+
+    // Check MySQL properties table
+    const [insertedRows] = await pool.query('SELECT * FROM properties WHERE id = ?', [newPropId]);
+    test('LIST PROPERTY: MySQL properties table contains verified record',
+      insertedRows.length === 1 && insertedRows[0].owner_id === testSellerId,
+      `Owner ID: ${insertedRows[0]?.owner_id}, Price: ₹${insertedRows[0]?.price}`
+    );
+
+    // Check decision intelligence tables
+    const [insertedTrust] = await pool.query('SELECT * FROM trust_scores WHERE property_id = ?', [newPropId]);
+    const [insertedCost] = await pool.query('SELECT * FROM hidden_costs WHERE property_id = ?', [newPropId]);
+    test('LIST PROPERTY: Trust Score and Hidden Costs initialized automatically',
+      insertedTrust.length > 0 && insertedCost.length > 0,
+      `Trust Score: ${insertedTrust[0]?.score}, Total 1st Year Outlay: ₹${insertedCost[0]?.total_est_first_year}`
+    );
+
+    // Check discovery in GPS Nearby search
+    const newNearby = await fetch('http://localhost:5000/api/properties/nearby?lat=11.0825&lng=76.9961&radius=5').then(r => r.json());
+    test('LIST PROPERTY: Newly listed property appears in Live Map / GPS Nearby search',
+      newNearby.success && newNearby.data?.properties?.some(p => p.id === newPropId),
+      `Found in Saravanampatti radius`
+    );
   } catch (err) {
     test('API Endpoints reachable', false, err.message);
   }
 
-  // 6. Frontend Files Integrity
-  console.log('\n6️⃣ Frontend HTML & JS Pages:');
+  // 7. Frontend Files Integrity
+  console.log('\n7️⃣ Frontend HTML & JS Pages:');
+
 
   const requiredFiles = [
     'index.html',

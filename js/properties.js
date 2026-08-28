@@ -6,54 +6,47 @@ let allLoadedProperties = [];
 let currentFilterPurpose = 'all';
 let currentFilterBHK = 'all';
 let currentViewMode = 'grid';
+let currentSearchQuery = '';
 
 const CATEGORY_SUBCATS = {
   residential: [
-    { value: 'all', label: 'All Residential' },
-    { value: 'apartment', label: 'Apartment' },
-    { value: 'flat', label: 'Flat' },
-    { value: 'villa', label: 'Villa' },
-    { value: 'house', label: 'Independent House' },
-    { value: 'builder_floor', label: 'Builder Floor' },
-    { value: 'duplex', label: 'Duplex' },
-    { value: 'bungalow', label: 'Bungalow' }
+    { value: 'all', label: 'All Residential Types' },
+    { value: 'apartment', label: 'Apartments / Flats' },
+    { value: 'villa', label: 'Independent House / Villa' },
+    { value: 'duplex', label: 'Duplex Home' },
+    { value: 'penthouse', label: 'Luxury Penthouse' },
+    { value: 'studio', label: 'Studio Apartment' }
   ],
   land_plots: [
-    { value: 'all', label: 'All Land / Plots' },
-    { value: 'residential_plot', label: 'Residential Plot' },
-    { value: 'agricultural_land', label: 'Agricultural Land' },
-    { value: 'farm_land', label: 'Farm Land' },
-    { value: 'commercial_plot', label: 'Commercial Plot' },
-    { value: 'industrial_land', label: 'Industrial Land' }
+    { value: 'all', label: 'All Land & Plot Types' },
+    { value: 'residential_plot', label: 'Residential Plot / Layout' },
+    { value: 'commercial_land', label: 'Commercial Land' },
+    { value: 'agricultural_land', label: 'Farmland / Farm House' },
+    { value: 'industrial_plot', label: 'Industrial Land' }
   ],
   commercial: [
-    { value: 'all', label: 'All Commercial' },
-    { value: 'office', label: 'Office' },
-    { value: 'shop', label: 'Shop / Retail' },
-    { value: 'showroom', label: 'Showroom' },
-    { value: 'warehouse', label: 'Warehouse' },
-    { value: 'commercial_building', label: 'Commercial Building' },
-    { value: 'co_working', label: 'Co-working Space' },
-    { value: 'industrial', label: 'Industrial Property' }
+    { value: 'all', label: 'All Commercial Types' },
+    { value: 'office_space', label: 'Office Space' },
+    { value: 'retail_shop', label: 'Retail Shop / Showroom' },
+    { value: 'warehouse', label: 'Warehouse / Godown' },
+    { value: 'commercial_building', label: 'Full Commercial Building' }
   ],
   pg_rooms: [
-    { value: 'all', label: 'All PG & Rooms' },
-    { value: 'pg', label: 'PG' },
-    { value: 'hostel', label: 'Hostel' },
-    { value: 'single_room', label: 'Single Room' },
-    { value: 'shared_room', label: 'Shared Room' },
-    { value: 'co_living', label: 'Co-living' },
-    { value: 'student_housing', label: 'Student Accommodation' }
+    { value: 'all', label: 'All Living Types' },
+    { value: 'single_room', label: 'Private Single Room' },
+    { value: 'shared_room', label: 'Shared Co-living Room' },
+    { value: 'service_apartment', label: 'Serviced Apartment' },
+    { value: 'hostel', label: 'Hostel' }
   ],
   new_projects: [
-    { value: 'all', label: 'All New Projects' },
-    { value: 'new_apartments', label: 'New Apartments' },
-    { value: 'new_villas', label: 'New Villas' },
-    { value: 'gated_community', label: 'Gated Communities' },
-    { value: 'residential_project', label: 'Residential Projects' },
-    { value: 'commercial_project', label: 'Commercial Projects' }
+    { value: 'all', label: 'All New Developments' },
+    { value: 'gated_community', label: 'Gated Community Township' },
+    { value: 'luxury_villas', label: 'Exclusive Villa Community' },
+    { value: 'high_rise', label: 'High-Rise Luxury Tower' },
+    { value: 'plotted_development', label: 'Approved Plotted Township' }
   ]
 };
+
 
 document.addEventListener('DOMContentLoaded', async () => {
   const token = localStorage.getItem('homesphere_token');
@@ -62,23 +55,54 @@ document.addEventListener('DOMContentLoaded', async () => {
   if (token) {
     if (brandLogoLink) brandLogoLink.href = '/dashboard.html';
     if (authActions) {
-      authActions.innerHTML = `<a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>`;
+      let userName = 'Profile';
+      let userInit = 'U';
+      try {
+        const u = JSON.parse(localStorage.getItem('homesphere_user') || '{}');
+        if (u.name) {
+          userName = u.name;
+          userInit = u.name.charAt(0).toUpperCase();
+        }
+      } catch (e) {}
+      authActions.innerHTML = `
+        <a href="/profile.html" class="nav-profile-header-link" style="display: inline-flex; align-items: center; gap: 0.5rem; text-decoration: none; padding: 0.25rem 0.65rem; border-radius: 50px; background: var(--bg-surface-alt); border: 1px solid var(--border-color); color: var(--text-primary); font-size: 0.8125rem; font-weight: 600;" title="View Profile">
+          <div style="width: 26px; height: 26px; border-radius: 50%; background: var(--brand-primary); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">${userInit}</div>
+          <span class="hide-mobile">${userName}</span>
+        </a>
+        <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>
+      `;
     }
   }
 
+
   // Parse URL Query Params
   const params = new URLSearchParams(window.location.search);
+  const qParam = params.get('q') || params.get('search');
   const cityParam = params.get('city');
   const catParam = params.get('category');
   const typeParam = params.get('type');
   const subcatParam = params.get('subcategory');
   const bedsParam = params.get('bedrooms');
 
+  if (qParam && qParam.trim()) {
+    currentSearchQuery = qParam.trim();
+    const heading = document.getElementById('marketMainHeading');
+    if (heading) heading.innerHTML = `Search Results for <span class="gradient-text">"${escapeHtml(currentSearchQuery)}"</span>`;
+    const subtitle = document.getElementById('marketSubtitle');
+    if (subtitle) subtitle.textContent = `Showing verified active properties matching "${currentSearchQuery}".`;
+    const cityInput = document.getElementById('filterCity');
+    if (cityInput && !cityParam) {
+      cityInput.placeholder = `Search: ${currentSearchQuery}`;
+    }
+  }
+
   if (cityParam) {
     const cityInput = document.getElementById('filterCity');
     if (cityInput) cityInput.value = cityParam;
-    const heading = document.getElementById('marketMainHeading');
-    if (heading) heading.textContent = `Properties in ${cityParam}`;
+    if (!qParam) {
+      const heading = document.getElementById('marketMainHeading');
+      if (heading) heading.textContent = `Properties in ${cityParam}`;
+    }
   }
 
   if (catParam && catParam !== 'all') {
@@ -183,6 +207,7 @@ async function fetchPropertiesFromAPI() {
   const verifiedOnly = document.getElementById('filterVerifiedOnly')?.checked || false;
 
   let queryUrl = `/api/properties?`;
+  if (currentSearchQuery) queryUrl += `q=${encodeURIComponent(currentSearchQuery)}&`;
   if (city) queryUrl += `city=${encodeURIComponent(city)}&`;
   if (Number(maxPrice) < 30000000) queryUrl += `max_price=${maxPrice}&`;
   if (category !== 'all') queryUrl += `category=${encodeURIComponent(category)}&`;
@@ -191,6 +216,7 @@ async function fetchPropertiesFromAPI() {
   if (currentFilterBHK !== 'all') queryUrl += `bedrooms=${encodeURIComponent(currentFilterBHK)}&`;
   if (furnishing !== 'all') queryUrl += `furnishing=${encodeURIComponent(furnishing)}&`;
   if (verifiedOnly) queryUrl += `verified=true&`;
+
 
   try {
     const res = await fetch(queryUrl);
@@ -264,7 +290,18 @@ function renderPropertiesList(properties) {
           </div>
 
           <h3 class="prop-card-title"><a href="/property-details.html?id=${p.id}">${p.title}</a></h3>
-          <div class="prop-card-location"><i class="fas fa-map-marker-alt text-brand"></i> ${p.address || ''}${p.address ? ', ' : ''}${p.city}</div>
+
+          <div style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;margin-bottom:0.3rem;">
+            ${(p.category || 'residential').replace(/_/g, ' ')} • ${(p.subcategory || p.property_type || 'apartment').replace(/_/g, ' ')}
+          </div>
+
+          ${(p.project_name || p.community_name) ? `
+            <div style="font-size:0.8rem;font-weight:700;color:var(--brand-primary);margin-bottom:0.35rem;display:flex;align-items:center;gap:0.35rem;">
+              <i class="fas fa-city"></i> <span>${p.project_name || p.community_name}${p.unit_number ? ' • ' + p.unit_number : ''}</span>
+            </div>
+          ` : ''}
+
+          <div class="prop-card-location"><i class="fas fa-map-marker-alt text-rose"></i> ${p.locality ? p.locality + ', ' : (p.address ? p.address + ', ' : '')}${p.city}</div>
 
           <div class="prop-card-specs">
             ${p.bedrooms > 0 ? `<span><i class="fas fa-bed"></i> ${p.bedrooms} Beds</span>` : ''}
@@ -282,13 +319,24 @@ function renderPropertiesList(properties) {
   }).join('');
 }
 
+
 function handleFilterSubmit(e) {
   e.preventDefault();
   fetchPropertiesFromAPI();
 }
 
 function resetAllFilters() {
-  document.getElementById('filterCity').value = '';
+  currentSearchQuery = '';
+  const heading = document.getElementById('marketMainHeading');
+  if (heading) heading.textContent = 'Explore Properties';
+  const subtitle = document.getElementById('marketSubtitle');
+  if (subtitle) subtitle.textContent = 'Browse verified property listings across categories.';
+  const cityInput = document.getElementById('filterCity');
+  if (cityInput) {
+    cityInput.value = '';
+    cityInput.placeholder = 'City or Locality';
+  }
+
   document.getElementById('filterCategory').value = 'all';
   document.getElementById('filterPriceRange').value = '30000000';
   document.getElementById('filterFurnishing').value = 'all';
@@ -344,6 +392,16 @@ async function saveToShortlist(propertyId, e) {
   } catch (err) {
     console.error(err);
   }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 function showToast(message, type = 'info') {

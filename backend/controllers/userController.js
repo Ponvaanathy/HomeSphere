@@ -14,16 +14,41 @@ const getProfile = async (req, res, next) => {
       return res.status(404).json({ success: false, message: 'User not found.' });
     }
 
+    const user = users[0];
+
     const [prefs] = await pool.query(
       `SELECT budget_min, budget_max, preferred_city, preferred_type, lifestyle_json, priority_weights_json
        FROM user_preferences WHERE user_id = ?`,
       [userId]
     );
 
+    // Dynamic counts from MySQL database
+    const [listingsCount] = await pool.query(
+      `SELECT COUNT(*) as count FROM properties WHERE owner_id = ?`,
+      [userId]
+    );
+
+    const [savedCount] = await pool.query(
+      `SELECT COUNT(*) as count FROM saved_properties WHERE user_id = ?`,
+      [userId]
+    );
+
+    const locationStr = prefs[0]?.preferred_city || 'Coimbatore, Tamil Nadu';
+
     res.json({
       success: true,
       data: {
-        ...users[0],
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        phone: user.phone || '',
+        avatar_url: user.avatar_url || '/images/users/default-avatar.png',
+        status: user.status,
+        created_at: user.created_at,
+        location: locationStr,
+        listings_count: Number(listingsCount[0]?.count || 0),
+        saved_count: Number(savedCount[0]?.count || 0),
         preferences: prefs[0] || null
       }
     });
@@ -36,25 +61,63 @@ const getProfile = async (req, res, next) => {
 const updateProfile = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const { name, phone } = req.body;
+    const { name, phone, location, preferred_city, avatar_url } = req.body;
 
-    if (!name) {
+    if (!name || !name.trim()) {
       return res.status(400).json({ success: false, message: 'Name cannot be empty.' });
     }
 
-    await pool.query(
-      'UPDATE users SET name = ?, phone = ? WHERE id = ?',
-      [name.trim(), phone ? phone.trim() : null, userId]
+    let updateFields = ['name = ?'];
+    let updateParams = [name.trim()];
+
+    if (phone !== undefined) {
+      updateFields.push('phone = ?');
+      updateParams.push(phone ? phone.trim() : null);
+    }
+
+    if (avatar_url !== undefined && avatar_url) {
+      updateFields.push('avatar_url = ?');
+      updateParams.push(avatar_url.trim());
+    }
+
+    updateParams.push(userId);
+    await pool.query(`UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`, updateParams);
+
+    // Save location to user_preferences
+    const locValue = (location || preferred_city || '').trim();
+    if (locValue) {
+      await pool.query(
+        `INSERT INTO user_preferences (user_id, preferred_city)
+         VALUES (?, ?)
+         ON DUPLICATE KEY UPDATE preferred_city = VALUES(preferred_city)`,
+        [userId, locValue]
+      );
+    }
+
+    // Fetch refreshed user record
+    const [refreshedUsers] = await pool.query(
+      `SELECT id, name, email, role, phone, avatar_url, status, created_at FROM users WHERE id = ?`,
+      [userId]
     );
+
+    const [listingsCount] = await pool.query('SELECT COUNT(*) as count FROM properties WHERE owner_id = ?', [userId]);
+    const [savedCount] = await pool.query('SELECT COUNT(*) as count FROM saved_properties WHERE user_id = ?', [userId]);
 
     res.json({
       success: true,
-      message: 'Profile updated successfully.'
+      message: 'Profile updated successfully.',
+      data: {
+        ...refreshedUsers[0],
+        location: locValue || 'Coimbatore, Tamil Nadu',
+        listings_count: Number(listingsCount[0]?.count || 0),
+        saved_count: Number(savedCount[0]?.count || 0)
+      }
     });
   } catch (err) {
     next(err);
   }
 };
+
 
 // POST /api/users/avatar
 const updateAvatar = async (req, res, next) => {

@@ -3,16 +3,216 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>List Your Property | HomeSphere AI Platform</title>
+  <title>List Your Property | HomeSphere AI Marketplace</title>
+  <meta name="description" content="List residential homes, gated communities, land plots, commercial spaces, or co-living properties on HomeSphere with automated AI Trust Score and geocoding.">
+  
+  <!-- FontAwesome & Google Fonts -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Leaflet Map Library -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- HomeSphere Global Design System Styles -->
   <link rel="stylesheet" href="/css/style.css">
+  <link rel="stylesheet" href="/css/properties.css">
   <link rel="stylesheet" href="/css/list-property.css">
+  
+  <style>
+    .wizard-wrapper {
+      max-width: 920px;
+      margin: 2rem auto 4rem auto;
+    }
+
+    .form-section-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-heading);
+    }
+
+    .custom-radio-card-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .custom-radio-card {
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 0.85rem 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      transition: all var(--transition-fast);
+      background: #ffffff;
+      user-select: none;
+    }
+
+    .custom-radio-card:hover {
+      border-color: var(--brand-primary);
+      background: var(--brand-primary-light);
+    }
+
+    .custom-radio-card.active {
+      border-color: var(--brand-primary);
+      background: var(--brand-primary-light);
+      box-shadow: 0 0 0 1.5px var(--brand-primary);
+    }
+
+    .custom-radio-card input {
+      display: none;
+    }
+
+    .custom-radio-card .card-radio-icon {
+      font-size: 1.1rem;
+      color: var(--brand-primary);
+    }
+
+    .custom-radio-card .card-radio-title {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .dynamic-fields-card {
+      background: #f8fafc;
+      border: 1.5px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .dynamic-fields-header {
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: var(--brand-primary);
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .amenities-checkbox-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.65rem;
+    }
+
+    .amenity-checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.6rem 0.85rem;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      background: #ffffff;
+      font-size: 0.825rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .amenity-checkbox-label:hover {
+      background: var(--bg-surface-alt);
+      border-color: var(--border-strong);
+    }
+
+    /* Live Image Preview */
+    .image-preview-wrap {
+      width: 100%;
+      height: 220px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--bg-surface-alt);
+      border: 1.5px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-top: 0.75rem;
+    }
+
+    .image-preview-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--text-muted);
+      font-size: 0.875rem;
+    }
+
+    /* Success Card */
+    .success-celebration-card {
+      text-align: center;
+      padding: 3rem 2rem;
+      background: #ffffff;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-xl);
+    }
+
+    .success-icon-badge {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: #ecfdf5;
+      color: #059669;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.2);
+    }
+
+    .success-details-summary {
+      background: #f8fafc;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      max-width: 540px;
+      margin: 1.5rem auto 2rem auto;
+      text-align: left;
+    }
+
+    .success-actions-row {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+      .custom-radio-card-group {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 </head>
 <body>
 
   <!-- Navigation -->
-  <nav class="navbar">
-    <div class="container">
+  <nav class="navbar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 200;">
+    <div class="container" style="max-width: 100%; padding: 0 1.5rem;">
       <a href="/index.html" class="nav-brand" id="brandLogoLink">
         <div class="brand-icon"><i class="fas fa-cube"></i></div>
         <span>Home<span class="text-brand">Sphere</span></span>
@@ -21,42 +221,47 @@
       <div class="nav-links">
         <a href="/index.html" class="nav-link">Home</a>
         <a href="/properties.html" class="nav-link">Properties</a>
-        <a href="/map-search.html" class="nav-link">Live Map</a>
+        <a href="/map-search.html" class="nav-link"><i class="fas fa-map-marked-alt text-brand"></i> Live Map</a>
         <a href="/advisor.html" class="nav-link"><i class="fas fa-robot text-purple"></i> AI Advisor</a>
         <a href="/compare.html" class="nav-link">Compare</a>
         <a href="/dashboard.html" class="nav-link">Dashboard</a>
       </div>
 
       <div class="nav-actions" id="navAuthActions">
-        <a href="/dashboard.html" class="btn btn-primary btn-sm"><i class="fas fa-th-large"></i> Dashboard</a>
+        <a href="/dashboard.html" class="btn btn-primary btn-sm">Dashboard</a>
       </div>
     </div>
   </nav>
 
   <!-- Main Wizard Content -->
-  <main class="main-content">
+  <main class="main-content" style="padding-top: calc(var(--header-height) + 1.5rem);">
     <div class="container">
       <div class="wizard-wrapper">
 
-        <div style="text-align: center; margin-bottom: 2.5rem;">
-          <span class="badge badge-trust" style="margin-bottom: 0.75rem;">SELLER & AGENT PORTAL</span>
-          <h1>Publish Listing with <span class="gradient-text">AI Verification</span></h1>
-          <p class="text-secondary">Provide property data and documents to automatically generate your Trust Score & DNA.</p>
+        <!-- Header -->
+        <div style="text-align: center; margin-bottom: 2rem;">
+          <span class="score-pill trust" style="margin-bottom: 0.65rem;"><i class="fas fa-certificate"></i> VERIFIED SELLER & AGENT PORTAL</span>
+          <h1 style="font-size: 2.25rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; font-family: var(--font-heading);">
+            List Property with <span class="text-brand">AI Intelligence</span>
+          </h1>
+          <p class="text-secondary" style="font-size: 0.95rem; max-width: 650px; margin: 0 auto;">
+            List your residential homes, gated communities, plots, or commercial spaces. Coordinates and decision analytics are automatically generated by the backend.
+          </p>
         </div>
 
         <!-- Wizard Progress Bar -->
         <div class="wizard-steps">
           <div class="wizard-step active" id="stepIndicator1">
             <div class="step-number">1</div>
-            <div class="step-label">Basic Info</div>
+            <div class="step-label">Classification & Location</div>
           </div>
           <div class="wizard-step" id="stepIndicator2">
             <div class="step-number">2</div>
-            <div class="step-label">Pricing & Specs</div>
+            <div class="step-label">Specs & Pricing</div>
           </div>
           <div class="wizard-step" id="stepIndicator3">
             <div class="step-number">3</div>
-            <div class="step-label">DNA & Amenities</div>
+            <div class="step-label">DNA & Media</div>
           </div>
           <div class="wizard-step" id="stepIndicator4">
             <div class="step-number">4</div>
@@ -65,188 +270,555 @@
         </div>
 
         <!-- Wizard Form Card -->
-        <div class="wizard-card glass-card">
-          <form id="listPropertyForm">
+        <div class="wizard-card card" id="wizardFormCard">
+          <form id="listPropertyForm" novalidate>
 
-            <!-- Step 1: General Details -->
+            <!-- 📍 STEP 1: Classification & Location (Typing Only) -->
             <div class="step-panel active" id="stepPanel1">
-              <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-info-circle text-cyan"></i> Step 1: General Details</h3>
-
-              <div class="form-group">
-                <label class="form-label" for="propTitle">Property Listing Title *</label>
-                <input type="text" id="propTitle" class="form-input" placeholder="e.g. Modern Glass Penthouse with Skyline Terrace" required>
+              <div class="form-section-title">
+                <i class="fas fa-layer-group text-brand"></i> Step 1: Property Classification & Location
               </div>
 
+              <!-- Property Title -->
+              <div class="form-group">
+                <label class="form-label" for="propTitle">Property Listing Title *</label>
+                <input type="text" 
+                       id="propTitle" 
+                       class="form-input" 
+                       placeholder="e.g. CasaGrand XYZ 3 BHK Gated Community Villa or Standalone Home" 
+                       required>
+              </div>
+
+              <!-- Listing Intent Type (Sale / Rent / Lease) -->
+              <div class="form-group">
+                <label class="form-label">Listing Intent Type *</label>
+                <div class="custom-radio-card-group" id="intentRadioGroup">
+                  <label class="custom-radio-card active" data-type="sale">
+                    <input type="radio" name="listingIntent" value="sale" checked>
+                    <i class="fas fa-home card-radio-icon"></i>
+                    <div>
+                      <div class="card-radio-title">SELL / BUY</div>
+                      <span class="text-muted" style="font-size: 0.72rem;">Outright Sale</span>
+                    </div>
+                  </label>
+                  <label class="custom-radio-card" data-type="rent">
+                    <input type="radio" name="listingIntent" value="rent">
+                    <i class="fas fa-key card-radio-icon" style="color: #059669;"></i>
+                    <div>
+                      <div class="card-radio-title">RENT</div>
+                      <span class="text-muted" style="font-size: 0.72rem;">Monthly Rental</span>
+                    </div>
+                  </label>
+                  <label class="custom-radio-card" data-type="lease">
+                    <input type="radio" name="listingIntent" value="lease">
+                    <i class="fas fa-building card-radio-icon" style="color: #7c3aed;"></i>
+                    <div>
+                      <div class="card-radio-title">LEASE</div>
+                      <span class="text-muted" style="font-size: 0.72rem;">Long-Term Lease</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <!-- Category & Property Subtype Selection -->
               <div class="form-grid-2">
                 <div class="form-group">
-                  <label class="form-label">Intent Type *</label>
-                  <div style="display:flex;gap:1.5rem;padding-top:0.4rem;">
-                    <label class="custom-checkbox">
-                      <input type="radio" name="type" value="buy" checked> For Sale
-                    </label>
-                    <label class="custom-checkbox">
-                      <input type="radio" name="type" value="rent"> For Rent
-                    </label>
+                  <label class="form-label" for="propCategory">Market Category *</label>
+                  <select id="propCategory" class="form-select">
+                    <option value="residential" selected>RESIDENTIAL</option>
+                    <option value="land_plots">LAND / PLOT</option>
+                    <option value="commercial">COMMERCIAL</option>
+                    <option value="pg_rooms">PG / ROOMS</option>
+                  </select>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="propSubtype">Property Subtype *</label>
+                  <select id="propSubtype" class="form-select">
+                    <!-- Populated dynamically based on category -->
+                  </select>
+                </div>
+              </div>
+
+              <!-- Dynamic Subtype-Specific Fields Container -->
+              <div id="dynamicSubtypeFieldsContainer"></div>
+
+              <!-- 🗺️ INTERACTIVE PROPERTY LOCATION & MAP PIN INTEGRATION -->
+              <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 1rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+                  <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 0.4rem;">
+                    <i class="fas fa-map-marker-alt text-rose"></i> Property Location & Map Pin *
+                  </div>
+                  <span class="text-muted" style="font-size: 0.75rem;"><i class="fas fa-magic text-brand"></i> Auto-Geocoded GPS Intelligence</span>
+                </div>
+
+                <!-- Location Search Bar with Instant Geocoding -->
+                <div class="form-group" style="margin-bottom: 0.75rem;">
+                  <label class="form-label" for="propLocationSearch">Search / Enter Location</label>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <div style="position: relative; flex: 1;">
+                      <i class="fas fa-search" style="position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none;"></i>
+                      <input type="text" 
+                             id="propLocationSearch" 
+                             class="form-input" 
+                             placeholder="e.g. Peelamedu, Coimbatore or 24 Avinashi Road" 
+                             value="Peelamedu, Coimbatore"
+                             style="padding-left: 2.5rem;"
+                             autocomplete="off">
+                    </div>
+                    <button type="button" id="btnSearchLocation" class="btn btn-secondary" style="white-space: nowrap; padding: 0.6rem 1rem;">
+                      <i class="fas fa-search-location"></i> Find on Map
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Quick Location Chips -->
+                <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.85rem;">
+                  <span class="text-muted" style="font-size: 0.72rem; font-weight: 600;">Popular:</span>
+                  <button type="button" class="location-chip-btn" data-loc="Peelamedu, Coimbatore">Peelamedu</button>
+                  <button type="button" class="location-chip-btn" data-loc="RS Puram, Coimbatore">RS Puram</button>
+                  <button type="button" class="location-chip-btn" data-loc="Gandhipuram, Coimbatore">Gandhipuram</button>
+                  <button type="button" class="location-chip-btn" data-loc="Saravanampatti, Coimbatore">Saravanampatti</button>
+                  <button type="button" class="location-chip-btn" data-loc="Race Course, Coimbatore">Race Course</button>
+                </div>
+
+                <!-- 🗺️ Step 1 Interactive Leaflet Map Container -->
+                <div style="position: relative; margin-bottom: 0.75rem;">
+                  <div id="step1MapContainer" style="width: 100%; height: 320px; border-radius: var(--radius-md); border: 1.5px solid var(--border-color); background: #f8fafc; z-index: 1;"></div>
+                  
+                  <!-- Map Helper Instruction Floating Overlay -->
+                  <div style="position: absolute; top: 10px; left: 10px; z-index: 500; background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(4px); border: 1px solid var(--border-color); border-radius: 6px; padding: 0.35rem 0.65rem; font-size: 0.75rem; color: var(--text-secondary); box-shadow: 0 2px 6px rgba(0,0,0,0.08); display: flex; align-items: center; gap: 0.35rem;">
+                    <i class="fas fa-hand-pointer text-brand"></i>
+                    <span>Drag pin or click map to adjust exact spot</span>
+                  </div>
+                </div>
+
+                <!-- Map Status Bar & [ Confirm Location ] Button -->
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; background: #f8fafc; border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 0.75rem 1rem; margin-bottom: 1.25rem;">
+                  <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 200px;">
+                    <div style="width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0;">
+                      <i class="fas fa-map-pin"></i>
+                    </div>
+                    <div>
+                      <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Selected Map Location</div>
+                      <div id="mapSelectedLocationText" style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);">Peelamedu, Coimbatore, Tamil Nadu</div>
+                    </div>
+                  </div>
+
+                  <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span id="locationConfirmedBadge" style="display: none; font-size: 0.75rem; font-weight: 700; color: #059669; background: #ecfdf5; border: 1px solid #a7f3d0; padding: 0.3rem 0.6rem; border-radius: 20px;">
+                      <i class="fas fa-check-circle"></i> Location Confirmed
+                    </span>
+                    <button type="button" id="btnConfirmLocation" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.825rem;">
+                      <i class="fas fa-check"></i> Confirm Location
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Geocoding Alert Notice -->
+                <div id="mapGeocodeAlert" style="display: none; padding: 0.6rem 0.85rem; background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-sm); font-size: 0.8rem; color: #b91c1c; margin-bottom: 1rem; align-items: center; gap: 0.5rem;">
+                  <i class="fas fa-exclamation-triangle"></i>
+                  <span id="mapGeocodeAlertText">Location not found. Please search for a more specific location.</span>
+                </div>
+
+                <!-- Structured Address Breakdown Fields (Auto-filled from map / editable) -->
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label class="form-label" for="propLocality">Locality / Neighborhood *</label>
+                    <input type="text" 
+                           id="propLocality" 
+                           class="form-input" 
+                           placeholder="Enter locality e.g. Peelamedu" 
+                           value="Peelamedu"
+                           required>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="propCity">City *</label>
+                    <input type="text" 
+                           id="propCity" 
+                           class="form-input" 
+                           placeholder="Enter city e.g. Coimbatore" 
+                           value="Coimbatore"
+                           required>
+                  </div>
+                </div>
+
+                <div class="form-grid-2">
+                  <div class="form-group">
+                    <label class="form-label" for="propState">State / Region *</label>
+                    <input type="text" 
+                           id="propState" 
+                           class="form-input" 
+                           placeholder="Enter state e.g. Tamil Nadu" 
+                           value="Tamil Nadu"
+                           required>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="propZip">Postal / Zip Code</label>
+                    <input type="text" 
+                           id="propZip" 
+                           class="form-input" 
+                           placeholder="Enter postal code e.g. 641004" 
+                           value="641004">
                   </div>
                 </div>
 
                 <div class="form-group">
-                  <label class="form-label" for="propCategory">Property Category *</label>
-                  <select id="propCategory" class="form-select">
-                    <option value="apartment">Apartment</option>
-                    <option value="villa">Luxury Villa</option>
-                    <option value="penthouse">Penthouse</option>
-                    <option value="townhouse">Townhouse</option>
-                    <option value="studio">Studio</option>
-                  </select>
+                  <label class="form-label" for="propAddress">Full Street Address / Landmark *</label>
+                  <input type="text" 
+                         id="propAddress" 
+                         class="form-input" 
+                         placeholder="Enter full property address e.g. 24 Avinashi Road, Near PSG Tech" 
+                         value="Avinashi Road, Peelamedu"
+                         required>
                 </div>
+
+                <!-- Hidden inputs storing the coordinates (Never exposed as lat/lng text inputs to user) -->
+                <input type="hidden" id="propLat" name="lat" value="11.0267">
+                <input type="hidden" id="propLng" name="lng" value="77.0028">
               </div>
 
+              <!-- Description -->
               <div class="form-group">
-                <label class="form-label" for="propAddress">Street Address *</label>
-                <input type="text" id="propAddress" class="form-input" placeholder="e.g. 742 Skyview Boulevard, Suite PH-B" required>
-              </div>
-
-              <div class="form-grid-3">
-                <div class="form-group">
-                  <label class="form-label" for="propCity">City *</label>
-                  <input type="text" id="propCity" class="form-input" placeholder="e.g. Austin" required>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="propState">State / Region *</label>
-                  <input type="text" id="propState" class="form-input" placeholder="e.g. TX" required>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="propZip">Zip / Postal Code</label>
-                  <input type="text" id="propZip" class="form-input" placeholder="78701">
-                </div>
-              </div>
-
-              <div class="form-group">
-                <label class="form-label" for="propDescription">Detailed Description</label>
-                <textarea id="propDescription" class="form-textarea" rows="4" placeholder="Highlight unique architectural features, renovation history, smart appliances, view corridors..."></textarea>
+                <label class="form-label" for="propDescription">Detailed Property Description</label>
+                <textarea id="propDescription" class="form-textarea" rows="3" placeholder="Highlight unique features, interior finishes, sunlight ventilation, surrounding developments, and accessibility..."></textarea>
               </div>
             </div>
 
-            <!-- Step 2: Pricing & Specifications -->
+            <!-- 💰 STEP 2: Pricing & Specifications -->
             <div class="step-panel" id="stepPanel2">
-              <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-dollar-sign text-emerald"></i> Step 2: Pricing & Specifications</h3>
+              <div class="form-section-title">
+                <i class="fas fa-rupee-sign text-emerald"></i> Step 2: Pricing & Physical Dimensions
+              </div>
 
               <div class="form-grid-2">
                 <div class="form-group">
-                  <label class="form-label" for="propPrice" id="priceLabel">Listing Sale Price ($) *</label>
-                  <input type="number" id="propPrice" class="form-input" placeholder="e.g. 850000" min="100" required>
+                  <label class="form-label" for="propPrice" id="priceInputLabel">Listing Sale Price (₹ INR) *</label>
+                  <input type="number" id="propPrice" class="form-input" placeholder="e.g. 8500000" min="1000" required>
+                  <span class="text-muted" style="font-size: 0.75rem;" id="priceHelperText">Enter the total sale amount in Rupees.</span>
                 </div>
 
                 <div class="form-group" id="depositGroup" style="display: none;">
-                  <label class="form-label" for="propDeposit">Security Deposit ($)</label>
-                  <input type="number" id="propDeposit" class="form-input" placeholder="e.g. 5000" min="0">
+                  <label class="form-label" for="propDeposit">Security Deposit / Advance (₹ INR)</label>
+                  <input type="number" id="propDeposit" class="form-input" placeholder="e.g. 100000" min="0" value="0">
                 </div>
               </div>
 
-              <div class="form-grid-3">
-                <div class="form-group">
-                  <label class="form-label" for="propBeds">Bedrooms</label>
-                  <input type="number" id="propBeds" class="form-input" value="3" min="1">
+              <!-- Standard Specs Grid (Bedrooms, Bathrooms, Built-Up Area, Year Built, Furnishing, Parking) -->
+              <div id="step2SpecsContainer">
+                <div class="form-grid-3">
+                  <div class="form-group" id="groupBedrooms">
+                    <label class="form-label" for="propBeds">Bedrooms / BHK</label>
+                    <select id="propBeds" class="form-select">
+                      <option value="1">1 BHK / 1 Bed</option>
+                      <option value="2">2 BHK / 2 Bed</option>
+                      <option value="3" selected>3 BHK / 3 Bed</option>
+                      <option value="4">4 BHK / 4 Bed</option>
+                      <option value="5">5+ BHK / Luxury</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group" id="groupBathrooms">
+                    <label class="form-label" for="propBaths">Bathrooms</label>
+                    <select id="propBaths" class="form-select">
+                      <option value="1">1 Bathroom</option>
+                      <option value="2">2 Bathrooms</option>
+                      <option value="3" selected>3 Bathrooms</option>
+                      <option value="4">4+ Bathrooms</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group" id="groupArea">
+                    <label class="form-label" for="propArea">Built-Up Area (Sq.Ft) *</label>
+                    <input type="number" id="propArea" class="form-input" placeholder="e.g. 1850" min="50" required>
+                  </div>
                 </div>
-                <div class="form-group">
-                  <label class="form-label" for="propBaths">Bathrooms</label>
-                  <input type="number" id="propBaths" class="form-input" value="2.5" step="0.5" min="1">
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="propArea">Area (Square Feet) *</label>
-                  <input type="number" id="propArea" class="form-input" placeholder="e.g. 2400" min="100" required>
+
+                <div class="form-grid-3">
+                  <div class="form-group">
+                    <label class="form-label" for="propYearBuilt">Year Built</label>
+                    <input type="number" id="propYearBuilt" class="form-input" value="2023" min="1950" max="2030">
+                  </div>
+
+                  <div class="form-group" id="groupFurnishing">
+                    <label class="form-label" for="propFurnishing">Furnishing Status</label>
+                    <select id="propFurnishing" class="form-select">
+                      <option value="fully-furnished">Fully Furnished</option>
+                      <option value="semi-furnished" selected>Semi-Furnished</option>
+                      <option value="unfurnished">Unfurnished</option>
+                    </select>
+                  </div>
+
+                  <div class="form-group" id="groupParking">
+                    <label class="form-label" for="propParking">Reserved Parking</label>
+                    <select id="propParking" class="form-select">
+                      <option value="1" selected>1 Covered Space</option>
+                      <option value="2">2 Covered Spaces</option>
+                      <option value="3">3+ Spaces</option>
+                      <option value="0">None / Open</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              <div class="form-grid-3">
-                <div class="form-group">
-                  <label class="form-label" for="propYearBuilt">Year Built</label>
-                  <input type="number" id="propYearBuilt" class="form-input" value="2022">
+              <!-- 💰 Optional Owner-Provided Cost Overrides -->
+              <div style="border-top: 1px solid var(--border-color); padding-top: 1.25rem; margin-top: 1.25rem;">
+                <div style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fas fa-calculator text-brand"></i> Optional Cost & Maintenance Details (Owner Overrides)
                 </div>
-                <div class="form-group">
-                  <label class="form-label" for="propFurnishing">Furnishing</label>
-                  <select id="propFurnishing" class="form-select">
-                    <option value="fully-furnished">Fully Furnished</option>
-                    <option value="semi-furnished">Semi-Furnished</option>
-                    <option value="unfurnished">Unfurnished</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label class="form-label" for="propParking">Parking Spaces</label>
-                  <input type="number" id="propParking" class="form-input" value="2" min="0">
+                <p class="text-muted" style="font-size: 0.78rem; margin-bottom: 0.85rem;">
+                  If left blank, HomeSphere automatically calculates transparent estimates based on property area, category, and furnishing status.
+                </p>
+
+                <div class="form-grid-3">
+                  <div class="form-group">
+                    <label class="form-label" for="propMonthlyMaintenance">Monthly Maintenance (₹ INR)</label>
+                    <input type="number" id="propMonthlyMaintenance" class="form-input" placeholder="e.g. 3500 (Optional)" min="0">
+                    <span class="text-muted" style="font-size: 0.72rem;">Leave blank for area-scaled estimate.</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="propFitoutBudget">Fit-out / Interior Budget (₹ INR)</label>
+                    <input type="number" id="propFitoutBudget" class="form-input" placeholder="e.g. 150000 (Optional)" min="0">
+                    <span class="text-muted" style="font-size: 0.72rem;">Leave blank for furnishing-based estimate.</span>
+                  </div>
+
+                  <div class="form-group">
+                    <label class="form-label" for="propOtherCosts">Other Applicable Costs (₹ INR)</label>
+                    <input type="number" id="propOtherCosts" class="form-input" placeholder="e.g. 5000 (Optional)" min="0">
+                    <span class="text-muted" style="font-size: 0.72rem;">Legal, society transfer or setup fees.</span>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <!-- Step 3: DNA & Features -->
+            <!-- 🧬 STEP 3: DNA, Amenities & Media -->
+
             <div class="step-panel" id="stepPanel3">
-              <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-dna text-purple"></i> Step 3: Property DNA & Amenities</h3>
-
-              <div class="form-group">
-                <label class="form-label" for="propLegalStatus">Legal Title & Registration Status</label>
-                <input type="text" id="propLegalStatus" class="form-input" value="100% Clear Freehold Verified" placeholder="e.g. Freehold Clear Title">
+              <div class="form-section-title">
+                <i class="fas fa-dna text-purple"></i> Step 3: Property DNA, Amenities & Photos
               </div>
 
+              <!-- Property DNA Title Verification -->
               <div class="form-group">
-                <label class="form-label" for="propStructuralNotes">Structural & Envelope Integrity Notes</label>
-                <input type="text" id="propStructuralNotes" class="form-input" value="Seismic Grade 4 post-tension concrete and insulated glazing" placeholder="Structural specifications...">
+                <label class="form-label" for="propLegalStatus">Legal Title Verification Status</label>
+                <input type="text" id="propLegalStatus" class="form-input" value="100% Clear Freehold Title Verified">
               </div>
 
+
+              <!-- Amenities Checkbox Grid -->
               <div class="form-group">
-                <label class="form-label" style="margin-bottom: 0.75rem;">Select Property Amenities</label>
-                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem;">
-                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Solar Panels" checked> Solar Panels</label>
-                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="EV Charging Station" checked> EV Charging Station</label>
-                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Smart Home Automation" checked> Smart Home Automation</label>
-                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Private Pool"> Private Pool</label>
-                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="24/7 Security" checked> 24/7 Security</label>
-                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Rooftop Terrace"> Rooftop Terrace</label>
-                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Central Air Conditioning" checked> Central AC</label>
-                  <label class="custom-checkbox"><input type="checkbox" name="amenities" value="Private Elevator"> Private Elevator</label>
+                <label class="form-label" style="margin-bottom: 0.75rem;">Verified Civic & Lifestyle Amenities</label>
+                <div class="amenities-checkbox-grid">
+                  <label class="amenity-checkbox-label">
+                    <input type="checkbox" name="amenities" value="24/7 Security" checked>
+                    <span>🛡️ 24/7 Gated Security</span>
+                  </label>
+                  <label class="amenity-checkbox-label">
+                    <input type="checkbox" name="amenities" value="Power Backup" checked>
+                    <span>⚡ 100% Power Backup</span>
+                  </label>
+                  <label class="amenity-checkbox-label">
+                    <input type="checkbox" name="amenities" value="Solar Water Heating" checked>
+                    <span>☀️ Solar Water Heating</span>
+                  </label>
+                  <label class="amenity-checkbox-label">
+                    <input type="checkbox" name="amenities" value="EV Charging Station" checked>
+                    <span>🔌 EV Charging Station</span>
+                  </label>
+                  <label class="amenity-checkbox-label">
+                    <input type="checkbox" name="amenities" value="Clubhouse & Community Hall">
+                    <span>🏛️ Clubhouse / Hall</span>
+                  </label>
+                  <label class="amenity-checkbox-label">
+                    <input type="checkbox" name="amenities" value="Swimming Pool">
+                    <span>🏊 Swimming Pool</span>
+                  </label>
+                  <label class="amenity-checkbox-label">
+                    <input type="checkbox" name="amenities" value="Fitness Gym">
+                    <span>🏋️ Fitness Gym</span>
+                  </label>
+                  <label class="amenity-checkbox-label">
+                    <input type="checkbox" name="amenities" value="Children Play Area" checked>
+                    <span>🎠 Children's Play Area</span>
+                  </label>
                 </div>
               </div>
 
-              <div class="form-group" style="margin-top:1.5rem;">
-                <label class="form-label" for="propImageUrl">Primary Cover Image URL</label>
-                <input type="url" id="propImageUrl" class="form-input" placeholder="https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?auto=format&fit=crop&w=1200&q=80">
-                <span class="text-muted" style="font-size:0.78rem;">Leave blank to use default premium architecture image.</span>
+              <!-- 📷 REAL PROPERTY IMAGES UPLOAD SECTION -->
+              <div class="form-group" style="margin-top: 1.5rem;">
+                <label class="form-label" style="display: flex; justify-content: space-between; align-items: baseline;">
+                  <span><i class="fas fa-camera-retro text-brand"></i> Property Photos / Images *</span>
+                  <span class="text-muted" style="font-size: 0.75rem; font-weight: normal;">Supported: JPG, JPEG, PNG, WEBP (Max 10MB each)</span>
+                </label>
+
+                <!-- Upload Dropzone -->
+                <div class="image-upload-dropzone" id="imageUploadDropzone" tabindex="0">
+                  <input type="file" 
+                         id="propImageFileInput" 
+                         name="images" 
+                         accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp" 
+                         multiple 
+                         style="display: none;">
+                  <div class="upload-dropzone-content" id="dropzoneClickArea">
+                    <div class="upload-icon-circle">
+                      <i class="fas fa-cloud-upload-alt"></i>
+                    </div>
+                    <div class="upload-cta-title">+ Upload Property Images</div>
+                    <p class="upload-cta-hint">Drag & drop photos here, or <span class="text-brand" style="font-weight: 700;">browse from your device</span></p>
+                    <div class="upload-formats-row">
+                      <span class="format-tag">JPG</span>
+                      <span class="format-tag">JPEG</span>
+                      <span class="format-tag">PNG</span>
+                      <span class="format-tag">WEBP</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Image Previews Container -->
+                <div id="imagePreviewSection" style="margin-top: 1.25rem; display: none;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-primary);" id="imageCountBadge">
+                      Attached Photos (0)
+                    </span>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnAddMorePhotos" style="padding: 0.3rem 0.75rem; font-size: 0.78rem;">
+                      <i class="fas fa-plus"></i> Add More Photos
+                    </button>
+                  </div>
+
+                  <!-- Thumbnails Grid -->
+                  <div class="image-preview-grid" id="imagePreviewGrid"></div>
+
+                  <p class="text-muted" style="font-size: 0.75rem; margin-top: 0.65rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <i class="fas fa-info-circle text-brand"></i> The first image is set as the <strong>Main Cover Photo</strong> by default. Click on any thumbnail to designate it as the cover photo.
+                  </p>
+                </div>
               </div>
             </div>
 
-            <!-- Step 4: Review & Publish -->
+            <!-- 📋 STEP 4: Review Listing Summary -->
             <div class="step-panel" id="stepPanel4">
-              <h3 style="margin-bottom: 1.5rem;"><i class="fas fa-check-circle text-cyan"></i> Step 4: Review Listing Summary</h3>
-
-              <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-color);border-radius:var(--radius-lg);padding:1.5rem;margin-bottom:1.5rem;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
-                  <h4 id="reviewTitle" style="font-size:1.25rem;color:#fff;">Listing Title</h4>
-                  <div id="reviewPrice" style="font-size:1.5rem;font-weight:800;color:var(--accent-cyan);">$0</div>
-                </div>
-                <div id="reviewLocation" class="text-secondary" style="font-size:0.95rem;margin-bottom:0.5rem;">Location</div>
-                <div id="reviewSpecs" class="text-light" style="font-size:0.9rem;">Specs</div>
+              <div class="form-section-title">
+                <i class="fas fa-check-circle text-brand"></i> Step 4: Review Summary & Publish Listing
               </div>
 
-              <div style="background:rgba(99,102,241,0.1);border:1px solid rgba(99,102,241,0.3);border-radius:var(--radius-md);padding:1.25rem;font-size:0.9rem;color:var(--text-light);line-height:1.6;">
-                <i class="fas fa-sparkles text-cyan"></i> <strong>Automated AI Processing Notice:</strong><br>
-                Publishing will trigger the HomeSphere AI Engine to compute an initial **Trust Score**, generate structured **Property DNA**, calculate **Hidden Closing Costs**, and synthesize **Future Capital Value Predictions**.
+              <!-- Live Summary Box -->
+              <div style="background: #f8fafc; border: 1.5px solid var(--border-color); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; margin-bottom: 0.5rem; flex-wrap: wrap;">
+                  <h3 id="reviewTitle" style="font-size: 1.2rem; font-weight: 800; color: var(--text-primary); font-family: var(--font-heading);">
+                    Listing Title
+                  </h3>
+                  <div id="reviewPrice" style="font-size: 1.4rem; font-weight: 800; color: var(--brand-primary); font-family: var(--font-heading);">
+                    ₹0
+                  </div>
+                </div>
+
+                <div id="reviewClassification" style="font-size: 0.85rem; font-weight: 700; color: var(--brand-primary); margin-bottom: 0.5rem;">
+                  RESIDENTIAL • Gated Community Home
+                </div>
+
+                <div id="reviewProjectCommunity" style="font-size: 0.85rem; color: var(--text-primary); font-weight: 600; margin-bottom: 0.4rem; display: none;">
+                  <i class="fas fa-city text-brand"></i> <span id="reviewProjectText"></span>
+                </div>
+
+                <div id="reviewLocation" style="font-size: 0.9rem; color: var(--text-secondary); margin-bottom: 0.65rem; display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fas fa-map-marker-alt text-rose"></i> <span>Peelamedu, Coimbatore</span>
+                </div>
+
+                <div id="reviewSpecs" style="display: flex; gap: 1rem; font-size: 0.85rem; color: var(--text-primary); font-weight: 600; flex-wrap: wrap; margin-bottom: 0.75rem;">
+                  <span><i class="fas fa-bed text-brand"></i> 3 Beds</span>
+                  <span>•</span>
+                  <span><i class="fas fa-bath text-brand"></i> 3 Baths</span>
+                  <span>•</span>
+                  <span><i class="fas fa-vector-square text-brand"></i> 1,850 sqft</span>
+                </div>
+
+                <!-- Review Photos Section -->
+                <div style="border-top: 1px solid var(--border-color); padding-top: 0.75rem; margin-top: 0.5rem;">
+                  <div style="font-size: 0.8rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;" id="reviewPhotoCountLabel">
+                    Uploaded Photos (0)
+                  </div>
+                  <div class="review-gallery-preview" id="reviewGalleryRow"></div>
+                </div>
+              </div>
+
+
+              <!-- AI Automated Processing Notice -->
+              <div style="background: rgba(37, 99, 235, 0.05); border: 1px solid var(--brand-primary-border); border-radius: var(--radius-md); padding: 1.25rem; font-size: 0.875rem; color: var(--text-primary); line-height: 1.6;">
+                <div style="font-weight: 700; color: var(--brand-primary); margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.4rem;">
+                  <i class="fas fa-sparkles"></i> Automated Decision & Geocoding Pipeline:
+                </div>
+                Publishing triggers automatic backend processing:
+                <ul style="margin: 0.5rem 0 0 1.25rem; font-size: 0.825rem; color: var(--text-secondary);">
+                  <li><strong>Automatic Backend Geocoding</strong> (converts your typed location into map coordinates)</li>
+                  <li><strong>AI Trust Score & Verification</strong> (generates property trust index)</li>
+                  <li><strong>Locality LifeScore Radar</strong> (6-axis urban livability metrics)</li>
+                  <li><strong>Hidden Cost Outlay</strong> (stamp duty, registration & society charges)</li>
+                  <li><strong>5-Year Capital Forecast</strong> (compounding appreciation trajectory)</li>
+                </ul>
               </div>
             </div>
 
             <!-- Wizard Navigation Buttons -->
             <div class="wizard-actions">
-              <button type="button" class="btn btn-secondary" id="prevStepBtn" style="display:none;">
-                <i class="fas fa-arrow-left"></i> Previous
+              <button type="button" class="btn btn-secondary" id="prevStepBtn" style="display: none;">
+                <i class="fas fa-arrow-left"></i> Previous Step
               </button>
-              <button type="button" class="btn btn-primary" id="nextStepBtn">
+              <button type="button" class="btn btn-primary" id="nextStepBtn" style="margin-left: auto;">
                 Next Step <i class="fas fa-arrow-right"></i>
               </button>
-              <button type="submit" class="btn btn-emerald" id="submitPropertyBtn" style="display:none;">
-                <i class="fas fa-check"></i> Publish Listing & Generate AI DNA
+              <button type="submit" class="btn btn-primary" id="submitPropertyBtn" style="display: none; background: #059669; border-color: #059669;">
+                <i class="fas fa-check-circle"></i> Publish Listing & Synthesize Intelligence
               </button>
             </div>
 
           </form>
+        </div>
+
+        <!-- 🌟 STEP 5: SUCCESS STATE PANEL -->
+        <div class="success-celebration-card" id="successPanel" style="display: none;">
+          <div class="success-icon-badge">
+            <i class="fas fa-check"></i>
+          </div>
+          <h2 style="font-size: 1.75rem; font-weight: 800; color: var(--text-primary); margin-bottom: 0.5rem; font-family: var(--font-heading);">
+            Property Listed Successfully!
+          </h2>
+          <p class="text-secondary" style="font-size: 0.95rem;">
+            Your listing has been saved to MySQL and its location has been geocoded for the HomeSphere decision platform.
+          </p>
+
+          <div class="success-details-summary">
+            <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+              <span class="text-muted" style="font-size: 0.78rem; font-weight: 700; text-transform: uppercase;">Property Reference ID</span>
+              <span class="score-pill trust" id="successPropIdBadge">ID: #0</span>
+            </div>
+            <h4 id="successPropTitle" style="font-size: 1.05rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.25rem;">
+              Title
+            </h4>
+            <div id="successClassificationBadge" style="font-size: 0.8rem; font-weight: 700; color: var(--brand-primary); margin-bottom: 0.35rem;">
+              RESIDENTIAL • Gated Community Home
+            </div>
+            <div id="successPropPrice" style="font-size: 1.2rem; font-weight: 800; color: var(--brand-primary); font-family: var(--font-heading); margin-bottom: 0.5rem;">
+              ₹0
+            </div>
+            <div id="successPropLoc" style="font-size: 0.85rem; color: var(--text-secondary);">
+              <i class="fas fa-map-marker-alt text-rose"></i> <span>Peelamedu, Coimbatore</span>
+            </div>
+          </div>
+
+          <div class="success-actions-row">
+            <a href="#" class="btn btn-primary" id="successBtnViewDetails">
+              <i class="fas fa-external-link-alt"></i> View Property Details
+            </a>
+            <a href="/map-search.html" class="btn btn-secondary">
+              <i class="fas fa-map-marked-alt text-brand"></i> View on Live Map
+            </a>
+            <button type="button" class="btn btn-outline" id="btnListAnother">
+              <i class="fas fa-plus"></i> List Another Property
+            </button>
+          </div>
         </div>
 
       </div>
@@ -257,9 +829,10 @@
   <footer class="footer">
     <div class="container">
       <div class="footer-bottom">
-        <p>&copy; 2026 HomeSphere AI Platform.</p>
+        <p>&copy; 2026 HomeSphere AI Platform. All rights reserved.</p>
         <div style="display:flex;gap:1.5rem;">
-          <a href="/properties.html" class="text-muted">Discover</a>
+          <a href="/properties.html" class="text-muted">Discover Listings</a>
+          <a href="/map-search.html" class="text-muted">Live Map</a>
           <a href="/dashboard.html" class="text-muted">Dashboard</a>
         </div>
       </div>

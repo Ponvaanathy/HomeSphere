@@ -215,16 +215,22 @@
   top: calc(var(--header-height) + 1.5rem);
 }
 
+.costs-table-wrapper {
+  overflow-x: auto;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+}
+
 @media (max-width: 992px) {
   .details-page-layout { grid-template-columns: 1fr; }
   .details-contact-sidebar { position: static; }
   .lifescore-grid { grid-template-columns: repeat(2, 1fr); }
   .radar-split-grid { grid-template-columns: 1fr !important; justify-items: center; }
-  .forecast-stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
 @media (max-width: 576px) {
   .radar-factors-grid { grid-template-columns: 1fr !important; }
-  .forecast-stats-grid { grid-template-columns: 1fr !important; }
 }
+
 
