@@ -43,15 +43,16 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static Assets Serving
+const frontendDir = path.join(__dirname, '../frontend');
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-app.use('/images', express.static(path.join(__dirname, '../images')));
+app.use('/images', express.static(path.join(frontendDir, 'images')));
 app.use('/documents', express.static(path.join(__dirname, '../documents')));
-app.use('/css', express.static(path.join(__dirname, '../css')));
-app.use('/js', express.static(path.join(__dirname, '../js')));
-app.use('/admin', express.static(path.join(__dirname, '../admin')));
+app.use('/css', express.static(path.join(frontendDir, 'css')));
+app.use('/js', express.static(path.join(frontendDir, 'js')));
+app.use('/admin', express.static(path.join(frontendDir, 'admin')));
 
 // Serve root static frontend pages
-app.use(express.static(path.join(__dirname, '../')));
+app.use(express.static(frontendDir));
 
 // Health Check
 app.get('/api/health', (req, res) => {
@@ -86,10 +87,9 @@ app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) {
     return next();
   }
-  const fs = require('fs');
   const cleanPath = req.path.replace(/\/$/, '');
-  const directPath = path.join(__dirname, '../', cleanPath);
-  const htmlPath = path.join(__dirname, '../', cleanPath + '.html');
+  const directPath = path.join(frontendDir, cleanPath);
+  const htmlPath = path.join(frontendDir, cleanPath + '.html');
 
   if (cleanPath && fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
     return res.sendFile(htmlPath);
@@ -97,7 +97,7 @@ app.get('*', (req, res, next) => {
   if (cleanPath && fs.existsSync(directPath) && fs.statSync(directPath).isFile()) {
     return res.sendFile(directPath);
   }
-  res.sendFile(path.join(__dirname, '../index.html'));
+  res.sendFile(path.join(frontendDir, 'index.html'));
 });
 
 
@@ -107,30 +107,35 @@ app.use(errorHandler);
 const pool = require('./config/db');
 const { startExpiryJob } = require('./services/expiryService');
 
-// Start HTTP Server with Verified MySQL Connection Check
-(async () => {
-  try {
-    const dbStatus = await pool.testDatabaseConnection();
+// Export Express app for Vercel Serverless Functions
+module.exports = app;
 
-    app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      if (dbStatus.connected) {
-        console.log(`✅ MySQL Database Connected Successfully`);
-        console.log(`Database: ${dbStatus.database}`);
-        console.log(`Host: ${dbStatus.host}`);
-        console.log(`Port: ${dbStatus.port}`);
-      } else {
-        console.error(`❌ MySQL Database Connection Failed`);
-        console.error(`Error: ${dbStatus.error}`);
-      }
+// Start HTTP Server when executed directly (node server.js or npm run dev)
+if (require.main === module) {
+  (async () => {
+    try {
+      const dbStatus = await pool.testDatabaseConnection();
 
-      // Start background auto-expiry job
-      startExpiryJob();
-    });
-  } catch (err) {
-    console.error(`❌ MySQL Database Connection Failed`);
-    console.error(`Error: ${err.message || err}`);
-  }
-})();
+      app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+        if (dbStatus.connected) {
+          console.log(`✅ MySQL Database Connected Successfully`);
+          console.log(`Database: ${dbStatus.database}`);
+          console.log(`Host: ${dbStatus.host}`);
+          console.log(`Port: ${dbStatus.port}`);
+        } else {
+          console.error(`❌ MySQL Database Connection Failed`);
+          console.error(`Error: ${dbStatus.error}`);
+        }
+
+        // Start background auto-expiry job
+        startExpiryJob();
+      });
+    } catch (err) {
+      console.error(`❌ MySQL Database Connection Failed`);
+      console.error(`Error: ${err.message || err}`);
+    }
+  })();
+}
 
 

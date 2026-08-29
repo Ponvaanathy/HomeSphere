@@ -24,8 +24,14 @@ const dbUser = process.env.DB_USER || 'root';
 const dbPass = process.env.DB_PASS !== undefined ? process.env.DB_PASS : '';
 const dbName = process.env.DB_NAME || 'homesphere';
 
+// SSL Configuration for Cloud MySQL (TiDB, Aiven, Railway, Supabase, AWS RDS)
+const isCloudDb = dbHost !== 'localhost' && dbHost !== '127.0.0.1';
+const dbSsl = process.env.DB_SSL === 'true' || (process.env.NODE_ENV === 'production' && isCloudDb)
+  ? { rejectUnauthorized: false }
+  : undefined;
+
 // Create MySQL Connection Pool
-const pool = mysql.createPool({
+const poolConfig = {
   host: dbHost,
   port: dbPort,
   user: dbUser,
@@ -35,7 +41,13 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   queueLimit: 0,
   decimalNumbers: true
-});
+};
+
+if (dbSsl) {
+  poolConfig.ssl = dbSsl;
+}
+
+const pool = mysql.createPool(poolConfig);
 
 // Real MySQL Connection Test Query
 const testDatabaseConnection = async () => {

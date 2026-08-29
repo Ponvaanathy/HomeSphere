@@ -1,0 +1,45 @@
+{
+  "version": 2,
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
+    },
+    {
+      "source": "/css/(.*)",
+      "destination": "/frontend/css/$1"
+    },
+    {
+      "source": "/js/(.*)",
+      "destination": "/frontend/js/$1"
+    },
+    {
+      "source": "/images/(.*)",
+      "destination": "/frontend/images/$1"
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": "/frontend/admin/$1"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "/uploads/$1"
+    },
+    {
+      "source": "/(advisor|compare|contact|dashboard|list-property|login|map-search|messages|my-listings|notifications|profile|properties|property-details|register|saved|transactions)",
+      "destination": "/frontend/$1.html"
+    },
+    {
+      "source": "/(.*)\\.html",
+      "destination": "/frontend/$1.html"
+    },
+    {
+      "source": "/",
+      "destination": "/frontend/index.html"
+    },
+    {
+      "source": "/((?!api/).*)",
+      "destination": "/frontend/$1"
+    }
+  ]
+}
