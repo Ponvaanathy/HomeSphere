@@ -743,15 +743,15 @@ const createProperty = async (req, res, next) => {
     // 🛡️ Pre-Submission Duplicate Listing Check
     // ==========================================
     const [existingDuplicates] = await pool.query(
-      `SELECT id, title, address, locality, city, price, area_sqft, owner_id
+      `SELECT id, title, address, city, price, area_sqft, owner_id
        FROM properties
        WHERE status = 'active'
          AND (
            (LOWER(TRIM(address)) = LOWER(TRIM(?)) AND LOWER(TRIM(city)) = LOWER(TRIM(?)))
-           OR (owner_id = ? AND category = ? AND locality = ? AND ABS(price - ?) <= ? * 0.05 AND ABS(area_sqft - ?) <= ? * 0.05)
+           OR (owner_id = ? AND category = ? AND LOWER(TRIM(city)) = LOWER(TRIM(?)) AND ABS(price - ?) <= ? * 0.05 AND ABS(area_sqft - ?) <= ? * 0.05)
          )
        LIMIT 1`,
-      [address.trim(), city.trim(), ownerId, normCategory, locality.trim(), numPrice, numPrice, numArea, numArea]
+      [address.trim(), city.trim(), ownerId, normCategory, city.trim(), numPrice, numPrice, numArea, numArea]
     );
 
     if (existingDuplicates && existingDuplicates.length > 0) {
@@ -759,7 +759,7 @@ const createProperty = async (req, res, next) => {
       return res.status(409).json({
         success: false,
         is_duplicate: true,
-        message: `Possible duplicate property detected. A listing at "${match.address}, ${match.locality || match.city}" with similar specifications already exists on HomeSphere (Property ID: #${match.id}). Please verify the existing listing before submitting.`,
+        message: `Possible duplicate property detected. A listing at "${match.address}, ${match.city}" with similar specifications already exists on HomeSphere (Property ID: #${match.id}). Please verify the existing listing before submitting.`,
         existing_property_id: match.id
       });
     }

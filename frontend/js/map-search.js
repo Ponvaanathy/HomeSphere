@@ -3,6 +3,7 @@
  * Real Interactive Leaflet Map, Geocoding, Geographic Distance Filtering, and Sync Engine
  */
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let mapInstance = null;
 let markersLayer = null;
 let amenitiesLayer = null;
@@ -116,7 +117,7 @@ function initLeafletMap() {
       // Reverse geocode clicked coordinates via backend API
       let locName = `Selected Point (${clickedLat.toFixed(4)}, ${clickedLng.toFixed(4)})`;
       try {
-        const revRes = await fetch(`/api/search/reverse-geocode?lat=${clickedLat}&lng=${clickedLng}`);
+        const revRes = await fetch(`${API_BASE}/api/search/reverse-geocode?lat=${clickedLat}&lng=${clickedLng}`);
         const revData = await revRes.json();
         if (revData && revData.success && revData.display_name) {
           locName = revData.display_name;
@@ -193,7 +194,7 @@ function setupGpsButton() {
         // Reverse geocode user location via backend
         let userLocName = `My Location (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
         try {
-          const revRes = await fetch(`/api/search/reverse-geocode?lat=${lat}&lng=${lng}`);
+          const revRes = await fetch(`${API_BASE}/api/search/reverse-geocode?lat=${lat}&lng=${lng}`);
           const revData = await revRes.json();
           if (revData && revData.success && revData.display_name) {
             userLocName = revData.display_name;
@@ -398,7 +399,7 @@ async function fetchLocationSuggestions(query) {
   if (!dropdownEl) return;
 
   try {
-    const dbRes = await fetch(`/api/search/suggestions?q=${encodeURIComponent(query)}`);
+    const dbRes = await fetch(`${API_BASE}/api/search/suggestions?q=${encodeURIComponent(query)}`);
     const dbData = await dbRes.json();
     let suggestions = [];
 
@@ -457,7 +458,7 @@ window.geocodeAndSearch = async function(query) {
 
   try {
     // Forward geocode via backend geocoding service (Nominatim + regional fallback)
-    const res = await fetch(`/api/search/geocode?q=${encodeURIComponent(query)}`);
+    const res = await fetch(`${API_BASE}/api/search/geocode?q=${encodeURIComponent(query)}`);
     const data = await res.json();
 
     if (data.success && data.lat && data.lng) {
@@ -574,7 +575,7 @@ async function loadProperties() {
   }
 
   try {
-    let url = `/api/properties/nearby?lat=${currentLocation.lat}&lng=${currentLocation.lng}&radius=${currentRadius}&limit=100`;
+    let url = `${API_BASE}/api/properties/nearby?lat=${currentLocation.lat}&lng=${currentLocation.lng}&radius=${currentRadius}&limit=100`;
 
     if (currentType && currentType !== 'all') {
       url += `&type=${encodeURIComponent(currentType)}`;
@@ -892,7 +893,7 @@ async function loadLocationIntelligence() {
   const intelBadge = document.getElementById('intelLifeScoreBadge');
 
   try {
-    const res = await fetch(`/api/properties/location-intelligence?lat=${currentLocation.lat}&lng=${currentLocation.lng}&radius=${currentRadius}&locality=${encodeURIComponent(currentLocation.locality)}`);
+    const res = await fetch(`${API_BASE}/api/properties/location-intelligence?lat=${currentLocation.lat}&lng=${currentLocation.lng}&radius=${currentRadius}&locality=${encodeURIComponent(currentLocation.locality)}`);
     const result = await res.json();
 
     if (result.success && result.data) {
@@ -1227,7 +1228,7 @@ function setupMapMovementListeners() {
     // Reverse geocode the new center
     let centerName = `Map Area (${center.lat.toFixed(4)}, ${center.lng.toFixed(4)})`;
     try {
-      const revRes = await fetch(`/api/search/reverse-geocode?lat=${center.lat}&lng=${center.lng}`);
+      const revRes = await fetch(`${API_BASE}/api/search/reverse-geocode?lat=${center.lat}&lng=${center.lng}`);
       const revData = await revRes.json();
       if (revData && revData.success && revData.display_name) {
         centerName = revData.display_name;
@@ -1280,10 +1281,10 @@ function renderErrorState() {
   cardsContainer.innerHTML = `
     <div class="map-empty-state" style="border: 1px solid #fecaca; background: #fff5f5; border-radius: var(--radius-md); padding: 2rem; text-align: center;">
       <i class="fas fa-exclamation-triangle text-rose" style="font-size: 2rem; margin-bottom: 0.75rem;"></i>
-      <h4 style="color: var(--text-primary); font-size: 1rem; margin-bottom: 0.25rem;">Unable to load properties</h4>
+      <h4 style="color: var(--text-primary); font-size: 1rem; margin-bottom: 0.25rem;">Unable to load properties. Please try again.</h4>
       <p class="text-secondary" style="font-size: 0.8125rem;">There was a connection issue loading map listings.</p>
       <button type="button" class="btn btn-primary btn-sm" style="margin-top: 1rem;" onclick="loadProperties()">
-        <i class="fas fa-redo"></i> Retry
+        <i class="fas fa-redo"></i> Retry Loading
       </button>
     </div>
   `;

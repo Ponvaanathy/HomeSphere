@@ -2,6 +2,8 @@
  * HomeSphere - Dashboard Controller (Real Data)
  */
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const token = localStorage.getItem('homesphere_token');
   const userStr = localStorage.getItem('homesphere_user');
@@ -35,7 +37,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function loadDashboardStats(token) {
   try {
-    const res = await fetch('/api/users/dashboard-stats', {
+    const res = await fetch(`${API_BASE}/api/users/dashboard-stats`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
@@ -63,7 +65,7 @@ async function loadDashboardStats(token) {
 
 async function loadCategoryStats() {
   try {
-    const res = await fetch('/api/properties/categories/stats');
+    const res = await fetch(`${API_BASE}/api/properties/categories/stats`);
     const data = await res.json();
     if (data.success && data.data) {
       const counts = data.data; // { residential: 5, land_plots: 2, ... }
@@ -93,7 +95,7 @@ async function loadDashboardRecommendations() {
   if (!grid) return;
 
   try {
-    const res = await fetch('/api/properties?limit=4');
+    const res = await fetch(`${API_BASE}/api/properties?limit=4`);
     const data = await res.json();
 
     if (data.success && data.data && data.data.properties && data.data.properties.length > 0) {
@@ -183,7 +185,7 @@ async function saveToShortlist(propertyId, e) {
   }
 
   try {
-    const res = await fetch('/api/saved', {
+    const res = await fetch(`${API_BASE}/api/saved`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

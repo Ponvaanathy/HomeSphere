@@ -1,5 +1,6 @@
 // HomeSphere Transaction Pipeline & Escrow Room Logic
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let activeDeals = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -23,7 +24,7 @@ async function loadMyDeals(token) {
   container.innerHTML = '<div class="spinner" style="grid-column: 1 / -1;"></div>';
 
   try {
-    const res = await fetch('/api/transactions/my-deals', {
+    const res = await fetch(`${API_BASE}/api/transactions/my-deals`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -201,7 +202,7 @@ window.viewTransactionReport = async function(txId) {
   `;
 
   try {
-    const res = await fetch(`/api/transactions/${txId}/report`, {
+    const res = await fetch(`${API_BASE}/api/transactions/${txId}/report`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -328,7 +329,7 @@ window.printTransactionReport = async function(txId) {
   if (!token) return;
 
   try {
-    const res = await fetch(`/api/transactions/${txId}/report`, {
+    const res = await fetch(`${API_BASE}/api/transactions/${txId}/report`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -427,7 +428,7 @@ window.markDealCompleted = async function(txId) {
   if (!confirm('Mark this real estate transaction as fully COMPLETED? This will finalize milestones and archive the property listing.')) return;
 
   try {
-    const res = await fetch(`/api/transactions/${txId}/status`, {
+    const res = await fetch(`${API_BASE}/api/transactions/${txId}/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

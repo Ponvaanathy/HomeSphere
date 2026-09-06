@@ -378,6 +378,7 @@
     </div>
   </footer>
 
+  <script src="/js/config.js"></script>
   <script>
     let currentHeroPurpose = 'sale';
     function setHeroPurpose(purpose, btn) {
@@ -400,6 +401,7 @@
 
     // Load Featured Properties and Category Stats
     document.addEventListener('DOMContentLoaded', async () => {
+      const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
       const grid = document.getElementById('homeFeaturedGrid');
       const token = localStorage.getItem('homesphere_token');
       const authActions = document.getElementById('navAuthActions');
@@ -426,10 +428,9 @@
         }
       }
 
-
-      // Load Category Real Counts
+      // Load Category Real Counts from Railway MySQL via Render
       try {
-        const catRes = await fetch('/api/properties/categories/stats');
+        const catRes = await fetch(`${API_BASE}/api/properties/categories/stats`);
         const catData = await catRes.json();
         if (catData.success && catData.data) {
           const counts = catData.data;
@@ -453,7 +454,7 @@
 
       // Load Featured Properties
       try {
-        const res = await fetch('/api/properties?limit=6');
+        const res = await fetch(`${API_BASE}/api/properties?limit=6`);
         const data = await res.json();
         if (data.success && data.data && data.data.properties && data.data.properties.length > 0) {
           const props = data.data.properties;
@@ -505,7 +506,7 @@
           grid.innerHTML = `
             <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
               <i class="fas fa-home text-muted" style="font-size: 2rem; margin-bottom: 0.75rem;"></i>
-              <h4 style="color: var(--text-primary); margin-bottom: 0.25rem;">No properties available yet.</h4>
+              <h4 style="color: var(--text-primary); margin-bottom: 0.25rem;">No verified properties available at the moment.</h4>
               <p class="text-secondary" style="font-size: 0.875rem;">Check back soon as new verified properties are listed.</p>
             </div>
           `;
@@ -513,8 +514,10 @@
       } catch (e) {
         console.error(e);
         grid.innerHTML = `
-          <div style="grid-column: 1 / -1; text-align: center; padding: 2rem;">
-            <p class="text-muted">No properties available yet.</p>
+          <div style="grid-column: 1 / -1; text-align: center; padding: 3rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <i class="fas fa-exclamation-triangle text-amber" style="font-size: 2rem; margin-bottom: 0.75rem;"></i>
+            <h4 style="color: var(--text-primary); margin-bottom: 0.25rem;">Unable to load properties. Please try again.</h4>
+            <p class="text-secondary" style="font-size: 0.875rem;">Could not connect to the HomeSphere backend service.</p>
           </div>
         `;
       }

@@ -94,6 +94,7 @@
 
   <div id="toast-container"></div>
 
+  <script src="/js/config.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', async () => {
       const token = localStorage.getItem('homesphere_token');
@@ -127,10 +128,10 @@
       loadNotifications(token);
     });
 
-
     async function loadNotifications(token) {
+      const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
       try {
-        const res = await fetch('/api/users/dashboard-stats', {
+        const res = await fetch(`${API_BASE}/api/users/dashboard-stats`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();

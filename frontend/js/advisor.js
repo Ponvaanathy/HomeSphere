@@ -2,6 +2,7 @@
  * HomeSphere - AI Home Advisor Conversational Assistant (Premium UI & Real Data)
  */
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let activePropertyId = null;
 let conversationHistory = [];
 let allPropertiesCache = [];
@@ -76,7 +77,7 @@ async function populatePropertyContextSelector(selectedId) {
   if (!selectElem) return;
 
   try {
-    const res = await fetch('/api/properties?limit=40');
+    const res = await fetch(`${API_BASE}/api/properties?limit=40`);
     const data = await res.json();
 
     if (data.success && data.data && Array.isArray(data.data.properties)) {
@@ -141,7 +142,7 @@ async function updateInsightsPanel(propertyId) {
   }
 
   try {
-    const res = await fetch(`/api/properties/${propertyId}`);
+    const res = await fetch(`${API_BASE}/api/properties/${propertyId}`);
     const data = await res.json();
     if (data.success && data.data) {
       const p = data.data;
@@ -268,7 +269,7 @@ async function sendMessage() {
   chatHistoryElem.scrollTop = chatHistoryElem.scrollHeight;
 
   try {
-    const res = await fetch('/api/ai/advisor', {
+    const res = await fetch(`${API_BASE}/api/ai/advisor`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

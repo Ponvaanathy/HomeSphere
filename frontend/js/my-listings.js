@@ -1,7 +1,8 @@
 /**
- * HomeSphere - My Listings Controller (Real Data)
+ * HomeSphere - My Listings Controller (Real Authenticated Data)
  */
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let myListingsData = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -44,7 +45,7 @@ async function loadMyListings() {
   if (!tbody) return;
 
   try {
-    const res = await fetch('/api/properties/my-listings', {
+    const res = await fetch(`${API_BASE}/api/properties/my-listings`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
@@ -190,7 +191,7 @@ async function deleteListing(id) {
   if (!confirm('Are you sure you want to remove this property listing?')) return;
   const token = localStorage.getItem('homesphere_token');
   try {
-    const res = await fetch(`/api/properties/${id}`, {
+    const res = await fetch(`${API_BASE}/api/properties/${id}`, {
       method: 'DELETE',
       headers: { 'Authorization': `Bearer ${token}` }
     });

@@ -198,6 +198,8 @@ function setViewMode(mode) {
   }
 }
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
+
 async function fetchPropertiesFromAPI() {
   const city = document.getElementById('filterCity')?.value.trim() || '';
   const category = document.getElementById('filterCategory')?.value || 'all';
@@ -206,7 +208,7 @@ async function fetchPropertiesFromAPI() {
   const furnishing = document.getElementById('filterFurnishing')?.value || 'all';
   const verifiedOnly = document.getElementById('filterVerifiedOnly')?.checked || false;
 
-  let queryUrl = `/api/properties?`;
+  let queryUrl = `${API_BASE}/api/properties?`;
   if (currentSearchQuery) queryUrl += `q=${encodeURIComponent(currentSearchQuery)}&`;
   if (city) queryUrl += `city=${encodeURIComponent(city)}&`;
   if (Number(maxPrice) < 30000000) queryUrl += `max_price=${maxPrice}&`;
@@ -216,7 +218,6 @@ async function fetchPropertiesFromAPI() {
   if (currentFilterBHK !== 'all') queryUrl += `bedrooms=${encodeURIComponent(currentFilterBHK)}&`;
   if (furnishing !== 'all') queryUrl += `furnishing=${encodeURIComponent(furnishing)}&`;
   if (verifiedOnly) queryUrl += `verified=true&`;
-
 
   try {
     const res = await fetch(queryUrl);
@@ -230,7 +231,19 @@ async function fetchPropertiesFromAPI() {
     }
   } catch (err) {
     console.error('Error fetching properties', err);
-    renderPropertiesList([]);
+    const container = document.getElementById('propertiesCardsContainer');
+    const countLabel = document.getElementById('resultsCountLabel');
+    if (countLabel) countLabel.textContent = 'Showing 0 properties';
+    if (container) {
+      container.innerHTML = `
+        <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+          <i class="fas fa-exclamation-triangle text-amber" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
+          <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">Unable to load properties. Please try again.</h3>
+          <p class="text-secondary" style="max-width: 400px; margin: 0 auto 1.5rem;">Could not connect to the backend server. Please verify your connection.</p>
+          <button onclick="fetchPropertiesFromAPI()" class="btn btn-primary btn-sm">Retry</button>
+        </div>
+      `;
+    }
   }
 }
 
@@ -246,7 +259,7 @@ function renderPropertiesList(properties) {
     container.innerHTML = `
       <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 2rem; background: #ffffff; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
         <i class="fas fa-search text-muted" style="font-size: 2.5rem; margin-bottom: 1rem;"></i>
-        <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">No properties available in this location.</h3>
+        <h3 style="color: var(--text-primary); margin-bottom: 0.5rem;">No verified properties available at the moment.</h3>
         <p class="text-secondary" style="max-width: 400px; margin: 0 auto 1.5rem;">Try adjusting your search criteria or resetting filters.</p>
         <button onclick="resetAllFilters()" class="btn btn-primary btn-sm">Reset Filters</button>
       </div>
@@ -371,7 +384,7 @@ async function saveToShortlist(propertyId, e) {
   }
 
   try {
-    const res = await fetch('/api/saved', {
+    const res = await fetch(`${API_BASE}/api/saved`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

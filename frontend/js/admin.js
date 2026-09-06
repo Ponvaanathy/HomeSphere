@@ -1,5 +1,7 @@
 // HomeSphere Admin Dashboard & Management Console Logic
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const token = localStorage.getItem('homesphere_token');
   const user = JSON.parse(localStorage.getItem('homesphere_user') || 'null');
@@ -26,7 +28,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 // 1. Admin Dashboard KPI Statistics
 async function loadAdminDashboardStats(token) {
   try {
-    const res = await fetch('/api/admin/stats', {
+    const res = await fetch(`${API_BASE}/api/admin/stats`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -67,7 +69,7 @@ async function loadUsersTable(token) {
   tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><div class="spinner"></div></td></tr>';
 
   try {
-    const res = await fetch('/api/admin/users', {
+    const res = await fetch(`${API_BASE}/api/admin/users`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -113,7 +115,7 @@ async function loadUsersTable(token) {
 async function updateUserRole(userId, role) {
   const token = localStorage.getItem('homesphere_token');
   try {
-    const res = await fetch(`/api/admin/users/${userId}/role`, {
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/role`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ role })
@@ -128,7 +130,7 @@ async function updateUserRole(userId, role) {
 async function updateUserStatus(userId, status) {
   const token = localStorage.getItem('homesphere_token');
   try {
-    const res = await fetch(`/api/admin/users/${userId}/status`, {
+    const res = await fetch(`${API_BASE}/api/admin/users/${userId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status })
@@ -151,7 +153,7 @@ async function loadPropertiesTable(token) {
   tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;"><div class="spinner"></div></td></tr>';
 
   try {
-    const res = await fetch('/api/admin/properties', {
+    const res = await fetch(`${API_BASE}/api/admin/properties`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -202,7 +204,7 @@ async function loadPropertiesTable(token) {
 async function updatePropertyStatus(propertyId, status) {
   const token = localStorage.getItem('homesphere_token');
   try {
-    const res = await fetch(`/api/admin/properties/${propertyId}/status`, {
+    const res = await fetch(`${API_BASE}/api/admin/properties/${propertyId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ status })
@@ -225,7 +227,7 @@ async function loadVerificationQueue(token) {
   queueList.innerHTML = '<div class="spinner" style="margin: 2rem auto;"></div>';
 
   try {
-    const res = await fetch('/api/admin/verification-queue', {
+    const res = await fetch(`${API_BASE}/api/admin/verification-queue`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -269,7 +271,7 @@ async function loadVerificationQueue(token) {
 async function verifyDocument(docId, verified_status) {
   const token = localStorage.getItem('homesphere_token');
   try {
-    const res = await fetch(`/api/admin/verify-document/${docId}`, {
+    const res = await fetch(`${API_BASE}/api/admin/verify-document/${docId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ verified_status })

@@ -1,5 +1,6 @@
 // HomeSphere In-App Property Chat & Multilingual Communication System
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let currentPropertyId = null;
 let currentOtherUserId = null;
 let activeThreadData = null;
@@ -64,7 +65,7 @@ async function loadConversations(token) {
   if (!container) return;
 
   try {
-    const res = await fetch('/api/messages/conversations', {
+    const res = await fetch(`${API_BASE}/api/messages/conversations`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -153,14 +154,14 @@ async function openThread(propertyId, otherUserId, token) {
   if (chatWrapper) chatWrapper.style.display = 'flex';
 
   try {
-    const res = await fetch(`/api/messages/thread/${propertyId}/${otherUserId}`, {
+    const res = await fetch(`${API_BASE}/api/messages/thread/${propertyId}/${otherUserId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
 
     if (!res.ok || !data.success) {
       // If thread not initiated yet, fetch property details to initialize clean chat state
-      const propRes = await fetch(`/api/properties/${propertyId}`);
+      const propRes = await fetch(`${API_BASE}/api/properties/${propertyId}`);
       const propData = await propRes.json();
       if (propData.success) {
         setupNewChatContext(propData.data, otherUserId);
@@ -265,7 +266,7 @@ window.translateMessage = async function(msgId, btn) {
     const isTamil = /[\u0B80-\u0BFF]/.test(text);
     const targetLang = isTamil ? 'en' : 'ta';
 
-    const res = await fetch('/api/messages/translate', {
+    const res = await fetch(`${API_BASE}/api/messages/translate`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -328,7 +329,7 @@ async function handleSendMessage(token) {
   input.value = '';
 
   try {
-    const res = await fetch('/api/messages', {
+    const res = await fetch(`${API_BASE}/api/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -356,7 +357,7 @@ async function handleSendMessage(token) {
 async function pollActiveThread(token) {
   if (!currentPropertyId || !currentOtherUserId) return;
   try {
-    const res = await fetch(`/api/messages/thread/${currentPropertyId}/${currentOtherUserId}`, {
+    const res = await fetch(`${API_BASE}/api/messages/thread/${currentPropertyId}/${currentOtherUserId}`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -372,7 +373,7 @@ async function pollActiveThread(token) {
 // Load Unread Count
 async function loadUnreadCount(token) {
   try {
-    const res = await fetch('/api/messages/unread-count', {
+    const res = await fetch(`${API_BASE}/api/messages/unread-count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -396,7 +397,7 @@ async function loadAISuggestions(propertyId, messages, token) {
     const isSeller = activeThreadData?.property?.owner_id === user.id;
     const lastMsg = messages && messages.length > 0 ? messages[messages.length - 1].message : '';
 
-    const res = await fetch('/api/messages/ai-suggest', {
+    const res = await fetch(`${API_BASE}/api/messages/ai-suggest`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

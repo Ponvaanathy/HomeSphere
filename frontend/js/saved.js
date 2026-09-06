@@ -2,6 +2,7 @@
  * HomeSphere - Premium Saved Properties Controller (Real Authenticated Data)
  */
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let allSavedProperties = [];
 let activeTypeFilter = 'all';
 let activeSearchQuery = '';
@@ -97,7 +98,7 @@ async function loadSavedCollection(token) {
   if (summaryEl) summaryEl.textContent = 'Loading saved properties...';
 
   try {
-    const res = await fetch('/api/saved', {
+    const res = await fetch(`${API_BASE}/api/saved`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -333,7 +334,7 @@ async function removeSavedProperty(propertyId, event) {
   }
 
   try {
-    const res = await fetch(`/api/saved/${propertyId}`, {
+    const res = await fetch(`${API_BASE}/api/saved/${propertyId}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${token}` }
     });

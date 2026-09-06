@@ -3,6 +3,7 @@
  * Complete Real Estate Marketplace Classification, Real Image File Upload & Automatic Backend Geocoding
  */
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let currentStep = 1;
 const totalSteps = 4;
 
@@ -908,7 +909,7 @@ async function submitPropertyListing() {
   }
 
   try {
-    const res = await fetch('/api/properties', {
+    const res = await fetch(`${API_BASE}/api/properties`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`
@@ -1213,7 +1214,7 @@ async function handlePinMoved(lat, lng) {
   if (locText) locText.innerHTML = `<i class="fas fa-spinner fa-spin text-brand"></i> Resolving address...`;
 
   try {
-    const res = await fetch(`/api/search/reverse-geocode?lat=${numLat}&lng=${numLng}`);
+    const res = await fetch(`${API_BASE}/api/search/reverse-geocode?lat=${numLat}&lng=${numLng}`);
     const data = await res.json();
 
     if (data && data.success && data.display_name) {
@@ -1265,7 +1266,7 @@ async function geocodeAndMoveMap(queryText, isExplicit = false) {
   if (locText) locText.innerHTML = `<i class="fas fa-spinner fa-spin text-brand"></i> Locating "${escapeHtml(cleanQ)}"...`;
 
   try {
-    const res = await fetch(`/api/search/geocode?q=${encodeURIComponent(cleanQ)}`);
+    const res = await fetch(`${API_BASE}/api/search/geocode?q=${encodeURIComponent(cleanQ)}`);
     const data = await res.json();
 
     if (data && data.success && data.lat && data.lng) {

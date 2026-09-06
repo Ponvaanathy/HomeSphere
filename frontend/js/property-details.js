@@ -2,6 +2,7 @@
  * HomeSphere - Property Details Controller (Real Data & Dynamic Action Flows)
  */
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let currentProperty = null;
 let detailsMap = null;
 
@@ -47,8 +48,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 async function loadPropertyDetails(id) {
   try {
     const [propRes, analyticsRes] = await Promise.allSettled([
-      fetch(`/api/properties/${id}`).then(r => r.json()),
-      fetch(`/api/properties/${id}/analytics`).then(r => r.json())
+      fetch(`${API_BASE}/api/properties/${id}`).then(r => r.json()),
+      fetch(`${API_BASE}/api/properties/${id}/analytics`).then(r => r.json())
     ]);
 
     if (propRes.status === 'fulfilled' && propRes.value.success && propRes.value.data) {
@@ -1170,10 +1171,11 @@ async function loadThreadMessages(token) {
   const stream = document.getElementById('modalChatStream');
   if (!stream || !currentProperty) return;
 
-  const otherUserId = currentProperty.owner_id || 1;
+  const otherUserId = currentProperty.owner_id || currentProperty.user_id;
+  if (!otherUserId) return;
 
   try {
-    const res = await fetch(`/api/messages/thread/${currentProperty.id}/${otherUserId}`, {
+    const res = await fetch(`${API_BASE}/api/messages/thread/${currentProperty.id}/${otherUserId}`, {
       headers: { 'Authorization': `Bearer ${token}` }
     });
     const data = await res.json();
@@ -1229,7 +1231,11 @@ async function handleSendInAppMessage(e) {
   const msgText = input?.value.trim();
   if (!msgText || !currentProperty) return;
 
-  const otherUserId = currentProperty.owner_id || 1;
+  const otherUserId = currentProperty.owner_id || currentProperty.user_id;
+  if (!otherUserId) {
+    showToast('Owner information unavailable.', 'error');
+    return;
+  }
   const stream = document.getElementById('modalChatStream');
 
   // Optimistic UI Append
@@ -1247,7 +1253,7 @@ async function handleSendInAppMessage(e) {
   if (input) input.value = '';
 
   try {
-    const res = await fetch('/api/messages', {
+    const res = await fetch(`${API_BASE}/api/messages`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -1280,7 +1286,7 @@ async function handleSaveAction() {
   if (!currentProperty) return;
 
   try {
-    const res = await fetch('/api/saved', {
+    const res = await fetch(`${API_BASE}/api/saved`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -63,6 +63,8 @@ function renderEmptyCompareState() {
   }
 }
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
+
 async function loadComparisonData(ids) {
   const container = document.getElementById('compareMatrixWrapper');
   if (!container) return;
@@ -70,7 +72,7 @@ async function loadComparisonData(ids) {
   container.innerHTML = '<div style="text-align: center; padding: 3rem;"><i class="fas fa-spinner fa-spin text-brand" style="font-size: 2rem;"></i></div>';
 
   try {
-    const res = await fetch(`/api/compare?ids=${ids}`);
+    const res = await fetch(`${API_BASE}/api/compare?ids=${ids}`);
     const data = await res.json();
 
     if (!res.ok || !data.success || !data.data || !data.data.properties || data.data.properties.length === 0) {

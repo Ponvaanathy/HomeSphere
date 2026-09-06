@@ -1,25 +1,24 @@
 /**
- * HomeSphere - Frontend Runtime Configuration
- * Dynamically resolves API and Backend URLs based on environment or settings.
+ * HomeSphere - Frontend Production Runtime Configuration
+ * 
+ * Target Production Backend: https://home-sphere-c184.onrender.com
+ * Target Production Frontend: https://home-sphere-hub.vercel.app
  */
 
-window.HOMESPHERE_CONFIG = (function() {
-  // If served from the same host (e.g., Express server or Vercel proxy)
-  const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-  
-  // Base configuration
-  const config = {
-    // Relative '/api' works automatically when frontend and backend share the domain or use rewrites
-    // If backend is deployed on a separate domain (e.g., Render), change this URL:
-    API_BASE_URL: isLocal && window.location.port !== '5000' 
-      ? 'http://localhost:5000/api' 
-      : '/api',
-    BACKEND_URL: isLocal && window.location.port !== '5000'
-      ? 'http://localhost:5000'
-      : window.location.origin,
+(function () {
+  const isLocal = typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+    window.location.port === '5000';
+
+  const BACKEND_BASE = isLocal
+    ? 'http://localhost:5000'
+    : 'https://home-sphere-c184.onrender.com';
+
+  window.API_BASE_URL = BACKEND_BASE;
+  window.HOMESPHERE_CONFIG = {
+    API_BASE_URL: `${BACKEND_BASE}/api`,
+    BACKEND_URL: BACKEND_BASE,
     APP_NAME: 'HomeSphere',
     VERSION: '1.0.0'
   };
-
-  return config;
 })();

@@ -46,7 +46,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const headers = { 'Content-Type': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const res = await fetch('/api/contact', {
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
+
+        const res = await fetch(`${API_BASE}/api/contact`, {
           method: 'POST',
           headers,
           body: JSON.stringify({

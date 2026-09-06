@@ -13,6 +13,8 @@ function togglePassVisibility(inputId, btn) {
   }
 }
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
+
 async function handleLoginSubmit(e) {
   e.preventDefault();
   const btn = document.getElementById('loginSubmitBtn');
@@ -23,7 +25,7 @@ async function handleLoginSubmit(e) {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing in...';
 
   try {
-    const res = await fetch('/api/auth/login', {
+    const res = await fetch(`${API_BASE}/api/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -48,7 +50,7 @@ async function handleLoginSubmit(e) {
     console.error('Login error', err);
     btn.disabled = false;
     btn.innerHTML = 'Sign In';
-    showToast('Failed to connect to authentication server. Please try again.', 'error');
+    showToast('Unable to connect to authentication server. Please try again.', 'error');
   }
 }
 

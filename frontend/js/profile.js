@@ -2,6 +2,8 @@
  * HomeSphere - Profile Controller (Real Data & Authentication)
  */
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
+
 document.addEventListener('DOMContentLoaded', async () => {
   const token = localStorage.getItem('homesphere_token');
   if (!token) {
@@ -47,7 +49,7 @@ function updateNavUserUI(user) {
  */
 async function loadUserProfile(token) {
   try {
-    const res = await fetch('/api/users/profile', {
+    const res = await fetch(`${API_BASE}/api/users/profile`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Accept': 'application/json'
@@ -156,7 +158,7 @@ async function handleSaveProfile(e) {
   }
 
   try {
-    const res = await fetch('/api/users/profile', {
+    const res = await fetch(`${API_BASE}/api/users/profile`, {
       method: 'PUT',
       headers: {
         'Authorization': `Bearer ${token}`,
@@ -246,7 +248,7 @@ async function handleChangePassword(e) {
   }
 
   try {
-    const res = await fetch('/api/auth/change-password', {
+    const res = await fetch(`${API_BASE}/api/auth/change-password`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${token}`,

@@ -13,6 +13,8 @@ function togglePassVisibility(inputId, btn) {
   }
 }
 
+const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
+
 async function handleRegisterSubmit(e) {
   e.preventDefault();
   const btn = document.getElementById('regSubmitBtn');
@@ -31,7 +33,7 @@ async function handleRegisterSubmit(e) {
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating account...';
 
   try {
-    const res = await fetch('/api/auth/register', {
+    const res = await fetch(`${API_BASE}/api/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -62,7 +64,7 @@ async function handleRegisterSubmit(e) {
     console.error('Register error', err);
     btn.disabled = false;
     btn.innerHTML = 'Create Account';
-    showToast('Registration service unavailable. Please try again.', 'error');
+    showToast('Unable to connect to authentication server. Please try again.', 'error');
   }
 }
 
