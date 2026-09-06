@@ -4,14 +4,10 @@ const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let activeDeals = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const token = localStorage.getItem('homesphere_token');
-  const user = JSON.parse(localStorage.getItem('homesphere_user') || 'null');
-
-  if (!token || !user) {
-    showToast('Please sign in to access your transaction room.', 'info');
-    setTimeout(() => { window.location.href = '/login.html'; }, 1000);
+  if (!window.AuthGuard || !window.AuthGuard.requireAuth()) {
     return;
   }
+  const token = localStorage.getItem('homesphere_token');
 
   await loadMyDeals(token);
 });

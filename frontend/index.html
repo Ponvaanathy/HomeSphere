@@ -379,6 +379,7 @@
   </footer>
 
   <script src="/js/config.js"></script>
+  <script src="/js/auth-guard.js"></script>
   <script>
     let currentHeroPurpose = 'sale';
     function setHeroPurpose(purpose, btn) {
@@ -396,6 +397,11 @@
       if (loc) q += `&city=${encodeURIComponent(loc)}`;
       if (cat && cat !== 'all') q += `&category=${encodeURIComponent(cat)}`;
       if (budget && budget !== 'all') q += `&budget=${encodeURIComponent(budget)}`;
+
+      if (!window.AuthGuard || !window.AuthGuard.isAuthenticated()) {
+        window.location.href = `/login.html?redirect=${encodeURIComponent(q)}`;
+        return;
+      }
       window.location.href = q;
     }
 

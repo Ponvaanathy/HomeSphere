@@ -5,13 +5,11 @@
 const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const token = localStorage.getItem('homesphere_token');
-  const userStr = localStorage.getItem('homesphere_user');
-
-  if (!token) {
-    window.location.href = '/login.html';
+  if (!window.AuthGuard || !window.AuthGuard.requireAuth()) {
     return;
   }
+  const token = localStorage.getItem('homesphere_token');
+  const userStr = localStorage.getItem('homesphere_user');
 
   let user = null;
   try {
@@ -234,9 +232,13 @@ function handleQuickSearch(e) {
 }
 
 function handleLogout() {
-  localStorage.removeItem('homesphere_token');
-  localStorage.removeItem('homesphere_user');
-  window.location.href = '/login.html';
+  if (window.AuthGuard) {
+    window.AuthGuard.logout('/login.html');
+  } else {
+    localStorage.removeItem('homesphere_token');
+    localStorage.removeItem('homesphere_user');
+    window.location.href = '/login.html';
+  }
 }
 
 function showToast(message, type = 'info') {

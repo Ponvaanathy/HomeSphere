@@ -77,15 +77,8 @@ document.addEventListener('DOMContentLoaded', () => {
  * 1. AUTHENTICATION CHECK & NAVBAR SYNC
  */
 function checkAuthAndSyncNav() {
-  const token = localStorage.getItem('homesphere_token');
-  const user = JSON.parse(localStorage.getItem('homesphere_user') || 'null');
-
-  if (!token || !user) {
-    showToast('Please sign in to list a property.', 'info');
-    setTimeout(() => {
-      window.location.href = '/login.html?redirect=/list-property.html';
-    }, 1000);
-    return;
+  if (!window.AuthGuard || !window.AuthGuard.requireAuth()) {
+    return false;
   }
 
   const brandLogoLink = document.getElementById('brandLogoLink') || document.querySelector('.nav-brand');

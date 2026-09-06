@@ -5,12 +5,10 @@
 const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const token = localStorage.getItem('homesphere_token');
-  if (!token) {
-    window.location.href = '/login.html';
+  if (!window.AuthGuard || !window.AuthGuard.requireAuth()) {
     return;
   }
-
+  const token = localStorage.getItem('homesphere_token');
   syncNavbar(token);
   await loadUserProfile(token);
 });
@@ -280,9 +278,13 @@ async function handleChangePassword(e) {
  * 5. Logout Handler
  */
 function handleLogout() {
-  localStorage.removeItem('homesphere_token');
-  localStorage.removeItem('homesphere_user');
-  window.location.href = '/login.html';
+  if (window.AuthGuard) {
+    window.AuthGuard.logout('/login.html');
+  } else {
+    localStorage.removeItem('homesphere_token');
+    localStorage.removeItem('homesphere_user');
+    window.location.href = '/login.html';
+  }
 }
 
 /**

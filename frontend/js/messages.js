@@ -8,13 +8,11 @@ let pollingInterval = null;
 let allConversations = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const token = localStorage.getItem('homesphere_token');
-  const user = JSON.parse(localStorage.getItem('homesphere_user') || 'null');
-
-  if (!token || !user) {
-    window.location.href = '/login.html';
+  if (!window.AuthGuard || !window.AuthGuard.requireAuth()) {
     return;
   }
+  const token = localStorage.getItem('homesphere_token');
+  const user = JSON.parse(localStorage.getItem('homesphere_user') || 'null');
 
   // Load conversations inbox
   await loadConversations(token);

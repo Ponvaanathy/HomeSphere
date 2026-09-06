@@ -3,12 +3,15 @@
 const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const token = localStorage.getItem('homesphere_token');
-  const user = JSON.parse(localStorage.getItem('homesphere_user') || 'null');
+  if (!window.AuthGuard || !window.AuthGuard.requireAuth()) {
+    return;
+  }
+  const token = window.AuthGuard.getAuthToken();
+  const user = window.AuthGuard.getAuthUser();
 
-  if (!token || !user || user.role !== 'admin') {
-    showToast('Administrator privileges required. Redirecting...', 'error');
-    setTimeout(() => { window.location.href = '/login.html'; }, 1000);
+  if (!user || user.role !== 'admin') {
+    showToast('Administrator privileges required. Redirecting to dashboard...', 'error');
+    setTimeout(() => { window.location.href = '/dashboard.html'; }, 1000);
     return;
   }
 

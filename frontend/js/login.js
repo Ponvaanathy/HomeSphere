@@ -37,9 +37,15 @@ async function handleLoginSubmit(e) {
       localStorage.setItem('homesphere_token', data.data.token);
       localStorage.setItem('homesphere_user', JSON.stringify(data.data.user));
 
-      showToast('Login successful! Redirecting to dashboard...', 'success');
+      const urlParams = new URLSearchParams(window.location.search);
+      const redirectUrl = urlParams.get('redirect');
+      const safeTarget = (redirectUrl && redirectUrl.startsWith('/') && !redirectUrl.startsWith('//')) 
+        ? redirectUrl 
+        : '/dashboard.html';
+
+      showToast('Login successful! Redirecting...', 'success');
       setTimeout(() => {
-        window.location.href = '/dashboard.html';
+        window.location.href = safeTarget;
       }, 700);
     } else {
       btn.disabled = false;

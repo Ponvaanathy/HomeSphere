@@ -37,7 +37,9 @@ let activeAmenities = new Set(['hospital', 'school', 'transport', 'supermarket']
 
 // Initial Bootstrap
 document.addEventListener('DOMContentLoaded', async () => {
-  syncNavbarAuth();
+  if (!window.AuthGuard || !window.AuthGuard.requireAuth()) {
+    return;
+  }
   initLeafletMap();
   setupGpsButton();
   setupFilterEventListeners();

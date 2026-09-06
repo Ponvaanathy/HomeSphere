@@ -6,11 +6,10 @@ const API_BASE = window.API_BASE_URL || 'https://home-sphere-c184.onrender.com';
 let myListingsData = [];
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const token = localStorage.getItem('homesphere_token');
-  if (!token) {
-    window.location.href = '/login.html';
+  if (!window.AuthGuard || !window.AuthGuard.requireAuth()) {
     return;
   }
+  const token = localStorage.getItem('homesphere_token');
 
   const authActions = document.getElementById('navAuthActions');
   const brandLogoLink = document.getElementById('brandLogoLink');
