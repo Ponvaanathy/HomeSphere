@@ -26,8 +26,8 @@ const dbName = process.env.DB_NAME || 'homesphere';
 
 // SSL Configuration for Cloud MySQL (TiDB, Aiven, Railway, Supabase, AWS RDS)
 const isCloudDb = dbHost !== 'localhost' && dbHost !== '127.0.0.1';
-const dbSsl = process.env.DB_SSL === 'true' || (process.env.NODE_ENV === 'production' && isCloudDb)
-  ? { rejectUnauthorized: false }
+const dbSsl = process.env.DB_SSL === 'true' || (isCloudDb && process.env.DB_SSL !== 'false')
+  ? { rejectUnauthorized: true }
   : undefined;
 
 // Create MySQL Connection Pool
@@ -40,6 +40,8 @@ const poolConfig = {
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
+  enableKeepAlive: true,
+  keepAliveInitialDelay: 10000,
   decimalNumbers: true
 };
 

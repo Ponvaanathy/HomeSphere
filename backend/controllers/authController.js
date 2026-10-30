@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const pool = require('../config/db');
+const sequenceService = require('../services/sequenceService');
 
 // Helper to generate JWT Token
 const generateToken = (user) => {
@@ -51,19 +52,50 @@ const register = async (req, res, next) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(password, salt);
 
-    // Insert user
-    const [result] = await pool.query(
-      'INSERT INTO users (name, email, password_hash, role, phone) VALUES (?, ?, ?, ?, ?)',
-      [name.trim(), email.toLowerCase().trim(), passwordHash, userRole, phone.trim()]
-    );
+    // Acquire safe next unique IDs for users and user_preferences (TiDB & MySQL compatible)
+    let newUserId = await sequenceService.getNextId('users');
+    let prefId = await sequenceService.getNextId('user_preferences');
 
-    const newUserId = result.insertId;
+    // Execute user and preferences insertion in a single atomic database transaction
+    // to guarantee no inconsistent or orphaned user-preference records on failure.
+    const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
 
-    // Create default user preferences entry
-    await pool.query(
-      'INSERT INTO user_preferences (user_id, budget_min, budget_max, preferred_city, preferred_type, lifestyle_json) VALUES (?, 100000, 2000000, "Austin", "apartment", ?)',
-      [newUserId, JSON.stringify({ prioritize_green: true, near_transit: true, top_schools: false })]
-    );
+      try {
+        await conn.query(
+          'INSERT INTO users (id, name, email, password_hash, role, phone) VALUES (?, ?, ?, ?, ?, ?)',
+          [newUserId, name.trim(), email.toLowerCase().trim(), passwordHash, userRole, phone.trim()]
+        );
+      } catch (insertErr) {
+        // If a duplicate primary key occurs from an out-of-band insert, rollback, resync monotonically, and retry cleanly
+        if (insertErr.code === 'ER_DUP_ENTRY' && !String(insertErr.message).includes('email')) {
+          await conn.rollback().catch(() => { });
+          await sequenceService.resync('users');
+          newUserId = await sequenceService.getNextId('users');
+          await conn.beginTransaction();
+          await conn.query(
+            'INSERT INTO users (id, name, email, password_hash, role, phone) VALUES (?, ?, ?, ?, ?, ?)',
+            [newUserId, name.trim(), email.toLowerCase().trim(), passwordHash, userRole, phone.trim()]
+          );
+        } else {
+          throw insertErr;
+        }
+      }
+
+      // Insert default user preferences entry - always supplies explicit ID for current TiDB schema
+      await conn.query(
+        'INSERT INTO user_preferences (id, user_id, budget_min, budget_max, preferred_city, preferred_type, lifestyle_json) VALUES (?, ?, 100000, 2000000, "Austin", "apartment", ?)',
+        [prefId, newUserId, JSON.stringify({ prioritize_green: true, near_transit: true, top_schools: false })]
+      );
+
+      await conn.commit();
+    } catch (txErr) {
+      await conn.rollback().catch(() => { });
+      throw txErr;
+    } finally {
+      conn.release();
+    }
 
     const newUser = {
       id: newUserId,
