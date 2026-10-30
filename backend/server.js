@@ -38,6 +38,7 @@ const PORT = process.env.PORT || 5000;
 // CORS Configuration for Production Vercel Frontend & Local Development
 const allowedOrigins = [
   'https://home-sphere-hub.vercel.app',
+  'https://home-sphere-2r94gcvsr-ponvaanathy.vercel.app',
   'https://home-sphere-c184.onrender.com',
   'http://localhost:5000',
   'http://localhost:3000',

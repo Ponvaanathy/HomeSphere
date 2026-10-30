@@ -2,7 +2,8 @@
  * HomeSphere - Frontend Production Runtime Configuration
  * 
  * Target Production Backend: https://home-sphere-c184.onrender.com
- * Target Production Frontend: https://home-sphere-hub.vercel.app
+ * Target Production Frontend (Primary Domain): https://home-sphere-hub.vercel.app
+ * Target Production Frontend (Deployment): https://home-sphere-2r94gcvsr-ponvaanathy.vercel.app
  */
 
 (function () {
